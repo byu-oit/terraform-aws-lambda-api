@@ -20,3 +20,4 @@ override.tf.json
 
 **/appspec.json
 node_modules
+**/*.zip

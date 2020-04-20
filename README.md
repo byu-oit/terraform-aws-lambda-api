@@ -3,6 +3,8 @@
 # Terraform AWS Lambda API
 Terraform module pattern to build a standard Lambda API.
 
+#### [New to Terraform Modules at BYU?](https://github.com/byu-oit/terraform-documentation)
+
 This module uses CodeDeploy to deploy a Lambda behind an ALB.
 
 Before switching production traffic to the new Lambda, CodeDeploy runs Postman tests.
@@ -12,3 +14,19 @@ This is done by:
  * Invoking a separate Lambda that runs Postman tests
    - These tests run against port `4443`, which corresponds to `$LATEST`
  * If the tests pass, we give the alias `live` to the now-tested `$LATEST` version of the Lambda
+
+## Usage
+```hcl
+```
+
+## Requirements
+* Terraform version 0.12.21 or greater
+* AWS provider version 2.56 or greater
+
+## Inputs
+| Name | Type  | Description | Default |
+| --- | --- | --- | --- |
+
+## Outputs
+| Name | Type | Description |
+| ---  | ---  | --- |

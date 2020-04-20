@@ -46,8 +46,8 @@ variable "https_certificate_arn" {
 
 variable "codedeploy_lifecycle_hooks" {
   type = object({
-    BeforeAllowTraffic    = string
-    AfterAllowTraffic     = string
+    BeforeAllowTraffic = string
+    AfterAllowTraffic  = string
   })
   description = "Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null"
   default     = null
@@ -71,6 +71,19 @@ variable "tags" {
   description = "A map of AWS Tags to attach to each resource created"
   default     = {}
 }
+
+variable "role_permissions_boundary_arn" {
+  type        = string
+  description = "IAM Role Permissions Boundary ARN"
+}
+
+variable "log_retention_in_days" {
+  type        = number
+  description = "CloudWatch log group retention in days. Defaults to 7."
+  default     = 7
+}
+
+//TODO: Add policies variable for additional policies to attach to the lambda role
 
 # ==================== Outputs ====================
 
@@ -261,9 +274,9 @@ resource "aws_route53_record" "aaaa_record" {
 # ==================== Lambda ====================
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name = "iam_for_lambda"
-
-  assume_role_policy = <<EOF
+  name                 = "iam_for_lambda"
+  permissions_boundary = var.role_permissions_boundary_arn
+  assume_role_policy   = <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -356,12 +369,16 @@ resource "aws_codedeploy_deployment_group" "deployment_group" {
 
 # ==================== CloudWatch ====================
 
-# resource "aws_cloudwatch_log_group" "log_group" {
-#   name              = "/aws/lambda/${lambda_function_name}"
-#   retention_in_days = var.log_retention_in_days
-#   tags              = var.tags
-# }
+resource "aws_cloudwatch_log_group" "log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.api_lambda.function_name}"
+  retention_in_days = var.log_retention_in_days
+  tags              = var.tags
+}
 
+resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.iam_for_lambda.name
+}
 
 # ==================== AppSpec file ====================
 

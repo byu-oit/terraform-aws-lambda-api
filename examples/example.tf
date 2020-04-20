@@ -8,15 +8,17 @@ module "acs" {
 }
 
 module "lambda_api" {
-  source = "../"
-  app_name = "my-lambda"
-  codedeploy_service_role_arn = module.acs.power_builder_role.arn
-  lambda_src_dir = "./my-lambda"
-  hosted_zone = module.acs.route53_zone
-  https_certificate_arn = module.acs.certificate.arn
-  vpc_id = module.acs.vpc.id
+  source                        = "../"
+  app_name                      = "my-lambda"
+  codedeploy_service_role_arn   = module.acs.power_builder_role.arn
+  lambda_src_dir                = "./my-lambda"
+  hosted_zone                   = module.acs.route53_zone
+  https_certificate_arn         = module.acs.certificate.arn
+  vpc_id                        = module.acs.vpc.id
   public_subnet_ids             = module.acs.public_subnet_ids
   private_subnet_ids            = module.acs.private_subnet_ids
+  role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
+
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
     AfterAllowTraffic  = null
