@@ -26,6 +26,10 @@ This is done by:
 ## Inputs
 | Name | Type  | Description | Default |
 | --- | --- | --- | --- |
+| app_name | string | | |
+| codedeploy_service_role_arn | string | | |
+| lambda_src_dir | string | | |
+| hosted_zone | object | | |
 
 ## Outputs
 | Name | Type | Description |

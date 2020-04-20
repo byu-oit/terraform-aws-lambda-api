@@ -26,6 +26,9 @@ exports.handler = async function (event, context) {
   }
   */
 
+  console.log(event)
+  console.log(context)
+
   return {
     'isBase64Encoded': false,
     'statusCode': 200,

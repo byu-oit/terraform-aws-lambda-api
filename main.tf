@@ -111,6 +111,9 @@ locals {
       AfterAllowTraffic = null
     }
   ]) : null
+
+  # Hacky workaround for bootstrap issue
+  # is_initial = aws_lambda_alias.initial.function_version == aws_lambda_alias.live.function_version
 }
 
 
@@ -317,9 +320,10 @@ resource "aws_lambda_function" "api_lambda" {
 
 resource "aws_lambda_alias" "live" {
   name             = "live"
-  description      = "a sample description"
+  description      = "a sample description" //TODO:
   function_name    = aws_lambda_function.api_lambda.arn
-  function_version = "1"
+  # Get the version of the lambda when it is first created
+  function_version = aws_lambda_function.api_lambda.version
   # Let CodeDeploy handle changes to the function version that this alias refers to
   lifecycle {
     ignore_changes = [
@@ -327,6 +331,20 @@ resource "aws_lambda_alias" "live" {
     ]
   }
 }
+
+# resource "aws_lambda_alias" "initial" {
+#   name             = "initial"
+#   description      = "a sample description" //TODO:
+#   function_name    = aws_lambda_function.api_lambda.arn
+#   # Get the version of the lambda when it is first created
+#   function_version = aws_lambda_function.api_lambda.version
+#   # Let CodeDeploy handle changes to the function version that this alias refers to
+#   lifecycle {
+#     ignore_changes = [
+#       function_version
+#     ]
+#   }
+# }
 
 # ==================== CodeDeploy ====================
 
@@ -382,10 +400,11 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 
 # ==================== AppSpec file ====================
 
-data "aws_lambda_alias" "alias_for_old_version" {
-  function_name = aws_lambda_function.api_lambda.function_name
-  name          = "live" //TODO: Make local?
-}
+# data "aws_lambda_alias" "alias_for_old_version" {
+#   count = local.is_initial ? 0 : 1
+#   function_name = aws_lambda_function.api_lambda.function_name
+#   name          = "live" //TODO: Make local?
+# }
 
 resource "local_file" "appspec_json" {
   filename = "${path.cwd}/appspec.json"
@@ -397,7 +416,7 @@ resource "local_file" "appspec_json" {
         Properties = {
           Name           = aws_lambda_function.api_lambda.function_name
           Alias          = aws_lambda_alias.live.name
-          CurrentVersion = data.aws_lambda_alias.alias_for_old_version.function_version
+          # CurrentVersion = local.is_initial ? aws_lambda_alias.initial.function_version : data.aws_lambda_alias.alias_for_old_version[0].function_version
           TargetVersion  = aws_lambda_function.api_lambda.version
         }
       }
