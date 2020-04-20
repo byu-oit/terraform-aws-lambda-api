@@ -9,7 +9,7 @@ module "acs" {
 
 module "lambda_api" {
   source = "../"
-  app_name = "test"
+  app_name = "my-lambda"
   codedeploy_service_role_arn = module.acs.power_builder_role.arn
   lambda_src_dir = "./my-lambda"
   hosted_zone = module.acs.route53_zone
@@ -18,10 +18,71 @@ module "lambda_api" {
   public_subnet_ids             = module.acs.public_subnet_ids
   private_subnet_ids            = module.acs.private_subnet_ids
   codedeploy_lifecycle_hooks = {
-    BeforeInstall         = null
-    AfterInstall          = null
-    AfterAllowTestTraffic = null
-    BeforeAllowTraffic    = null
-    AfterAllowTraffic     = null
+    BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
+    AfterAllowTraffic  = null
   }
+}
+
+resource "aws_iam_role" "test_lambda" {
+  name                 = "my-lambda-deploy-test"
+  permissions_boundary = module.acs.role_permissions_boundary.arn
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+data "archive_file" "cleanup_lambda_zip" {
+  source_dir  = "./tst"
+  output_path = "./tst/lambda.zip"
+  type        = "zip"
+}
+
+resource "aws_lambda_function" "test_lambda" {
+  filename         = "./tst/lambda.zip"
+  function_name    = "my-lambda-deploy-test"
+  role             = aws_iam_role.test_lambda.arn
+  handler          = "index.handler"
+  runtime          = "nodejs12.x"
+  timeout          = 30
+  source_code_hash = data.archive_file.cleanup_lambda_zip.output_base64sha256
+}
+
+resource "aws_iam_role_policy" "test_lambda" {
+  name = "my-lambda-deploy-test"
+  role = aws_iam_role.test_lambda.name
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*",
+      "Effect": "Allow"
+    },
+    {
+      "Action": "codedeploy:PutLifecycleEventHookExecutionStatus",
+      "Resource": "*",
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
 }

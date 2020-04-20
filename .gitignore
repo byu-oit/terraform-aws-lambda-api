@@ -19,3 +19,4 @@ override.tf.json
 .idea
 
 **/appspec.json
+node_modules

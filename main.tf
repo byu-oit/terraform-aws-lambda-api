@@ -46,9 +46,6 @@ variable "https_certificate_arn" {
 
 variable "codedeploy_lifecycle_hooks" {
   type = object({
-    BeforeInstall         = string
-    AfterInstall          = string
-    AfterAllowTestTraffic = string
     BeforeAllowTraffic    = string
     AfterAllowTraffic     = string
   })
@@ -95,15 +92,6 @@ locals {
     zipmap([hook], [lookup(var.codedeploy_lifecycle_hooks, hook, null)])
     ], [
     {
-      BeforeInstall = null
-    },
-    {
-      AfterInstall = null
-    },
-    {
-      AfterAllowTestTraffic = null
-    },
-    {
       BeforeAllowTraffic = null
     },
     {
@@ -140,6 +128,12 @@ resource "aws_security_group" "alb-sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    from_port   = 4443
+    to_port     = 4443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   // allow any outgoing traffic
   egress {
     protocol    = "-1"
@@ -152,6 +146,13 @@ resource "aws_security_group" "alb-sg" {
 
 resource "aws_alb_target_group" "tg" {
   name        = "${var.app_name}-tg"
+  target_type = "lambda"
+  tags        = var.tags
+  depends_on  = [aws_alb.alb]
+}
+
+resource "aws_alb_target_group" "tst_tg" {
+  name        = "${var.app_name}-tst"
   target_type = "lambda"
   tags        = var.tags
   depends_on  = [aws_alb.alb]
@@ -171,6 +172,23 @@ resource "aws_alb_listener" "https" {
   }
   depends_on = [
     aws_alb_target_group.tg
+  ]
+}
+
+resource "aws_alb_listener" "test_https" {
+  load_balancer_arn = aws_alb.alb.arn
+  port              = 4443
+  protocol          = "HTTPS"
+  certificate_arn   = var.https_certificate_arn
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_alb_target_group.tst_tg.arn
+  }
+  lifecycle {
+    ignore_changes = [default_action[0].target_group_arn]
+  }
+  depends_on = [
+    aws_alb_target_group.tst_tg
   ]
 }
 
@@ -197,10 +215,24 @@ resource "aws_lambda_permission" "with_lb" {
   qualifier     = aws_lambda_alias.live.name
 }
 
-resource "aws_alb_target_group_attachment" "test" {
+resource "aws_lambda_permission" "with_tst_lb" {
+  statement_id  = "AllowExecutionFromlb"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_lambda.arn
+  principal     = "elasticloadbalancing.amazonaws.com"
+  source_arn    = aws_alb_target_group.tst_tg.arn
+}
+
+resource "aws_alb_target_group_attachment" "live_attachment" {
   target_group_arn = aws_alb_target_group.tg.arn
   target_id        = aws_lambda_alias.live.arn
   depends_on       = [aws_lambda_permission.with_lb]
+}
+
+resource "aws_alb_target_group_attachment" "tst_attachment" {
+  target_group_arn = aws_alb_target_group.tst_tg.arn
+  target_id        = aws_lambda_function.api_lambda.arn # Latest
+  depends_on       = [aws_lambda_permission.with_tst_lb]
 }
 
 # ==================== Route53 ====================

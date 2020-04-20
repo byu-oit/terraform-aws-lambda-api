@@ -1,0 +1,50 @@
+{
+	"info": {
+		"_postman_id": "9f6893eb-9320-429a-aa4a-005b4bff3ec0",
+		"name": "my-lambda",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GET /",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "46e77871-2ea6-414e-8e25-a7d8dac05cce",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://my-lambda.byu-oit-terraform-dev.amazon.byu.edu:4443/",
+					"protocol": "https",
+					"host": [
+						"my-lambda",
+						"byu-oit-terraform-dev",
+						"amazon",
+						"byu",
+						"edu"
+					],
+					"port": "4443",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
