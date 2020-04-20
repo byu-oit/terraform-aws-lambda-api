@@ -20,6 +20,12 @@ variable "codedeploy_service_role_arn" {
   description = "ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)"
 }
 
+variable "codedeploy_termination_wait_time" {
+  type        = number
+  description = "The number of minutes to wait after a successful blue/green deployment before terminating instances from the original environment. Defaults to 15"
+  default     = 15
+}
+
 variable "lambda_src_dir" {
   type        = string
   description = "Directory that contains your lambda source code"
@@ -284,27 +290,26 @@ resource "aws_codedeploy_app" "app" {
   name             = "${var.app_name}-cd"
 }
 
-resource "aws_codedeploy_deployment_config" "config" {
-  deployment_config_name = "${var.app_name}-cfg"
-  compute_platform       = "Lambda"
+# resource "aws_codedeploy_deployment_config" "config" {
+#   deployment_config_name = "${var.app_name}-cfg"
+#   compute_platform       = "Lambda"
 
-  //TODO: There are other ways to configure this
-  traffic_routing_config {
-    type = "TimeBasedLinear"
+#   //TODO: There are other ways to configure this
+#   traffic_routing_config {
+#     type = "TimeBasedLinear"
 
-    time_based_linear {
-      interval   = 10
-      percentage = 10
-    }
-  }
-}
+#     time_based_linear {
+#       interval   = 10
+#       percentage = 10
+#     }
+#   }
+# }
 
 resource "aws_codedeploy_deployment_group" "deployment_group" {
   app_name               = aws_codedeploy_app.app.name
   deployment_group_name  = "${var.app_name}-dg"
   service_role_arn       = var.codedeploy_service_role_arn
-  deployment_config_name = aws_codedeploy_deployment_config.config.id
-
+  deployment_config_name = "CodeDeployDefault.LambdaAllAtOnce"
   deployment_style {
     deployment_option = "WITH_TRAFFIC_CONTROL"
     deployment_type   = "BLUE_GREEN"
@@ -328,26 +333,26 @@ resource "aws_codedeploy_deployment_group" "deployment_group" {
 
 # ==================== AppSpec file ====================
 
-# data "aws_lambda_alias" "alias_for_old_version" {
-#   function_name = aws_lambda_function.api_lambda.function_name
-#   name          = var.app_name
-# }
+data "aws_lambda_alias" "alias_for_old_version" {
+  function_name = aws_lambda_function.api_lambda.function_name
+  name          = "live" //TODO: Make local?
+}
 
-# resource "local_file" "appspec_json" {
-#   filename = "${path.cwd}/appspec.json"
-#   content = jsonencode({
-#     version = 1
-#     Resources = [{
-#       apiLambdaFunction = {
-#         Type = "AWS::Lambda::Function"
-#         Properties = {
-#           Name           = aws_lambda_function.api_lambda.function_name
-#           Alias          = aws_lambda_alias.live.name
-#           CurrentVersion = data.aws_lambda_alias.alias_for_old_version.function_version
-#           TargetVersion  = aws_lambda_function.api_lambda.version
-#         }
-#       }
-#     }],
-#     Hooks = local.hooks
-#   })
-# }
+resource "local_file" "appspec_json" {
+  filename = "${path.cwd}/appspec.json"
+  content = jsonencode({
+    version = 1
+    Resources = [{
+      apiLambdaFunction = {
+        Type = "AWS::Lambda::Function"
+        Properties = {
+          Name           = aws_lambda_function.api_lambda.function_name
+          Alias          = aws_lambda_alias.live.name
+          CurrentVersion = data.aws_lambda_alias.alias_for_old_version.function_version
+          TargetVersion  = aws_lambda_function.api_lambda.version
+        }
+      }
+    }],
+    Hooks = local.hooks
+  })
+}

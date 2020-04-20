@@ -34,6 +34,6 @@ exports.handler = async function (event, context) {
       'Set-cookie': 'cookies',
       'Content-Type': 'application/json'
     },
-    'body': '{"message":"Success!"}' // This needs to be a string - If you want to return JSON, you'll need to stringify it
+    'body': '{"message":"Hello, World! ... Yo!"}' // This needs to be a string - If you want to return JSON, you'll need to stringify it
   }
 }
