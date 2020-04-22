@@ -31,7 +31,7 @@ variable "runtime" {
 variable "environment_variables" {
   type        = map(string)
   description = "A map that defines environment variables for the Lambda function."
-  default = null
+  default     = null
 }
 
 variable "hosted_zone" {
