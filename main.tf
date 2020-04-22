@@ -250,6 +250,13 @@ resource "aws_lambda_function" "api_lambda" {
   runtime          = var.runtime
   publish          = true
 
+  dynamic "environment" {
+    for_each = var.environment_variables != null ? [1] : []
+    content {
+      variables = var.environment_variables
+    }
+  }
+
   vpc_config {
     subnet_ids         = var.private_subnet_ids
     security_group_ids = concat([aws_security_group.lambda_sg.id], var.security_groups)

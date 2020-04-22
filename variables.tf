@@ -28,6 +28,12 @@ variable "runtime" {
   description = "Lambda runtime"
 }
 
+variable "environment_variables" {
+  type        = map(string)
+  description = "A map that defines environment variables for the Lambda function."
+  default = null
+}
+
 variable "hosted_zone" {
   type = object({
     name = string,
