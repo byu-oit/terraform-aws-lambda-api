@@ -225,6 +225,7 @@ data "archive_file" "cleanup_lambda_zip" {
   type        = "zip"
 }
 
+# TODO: the SG fails to destroy because the lambda's ENI is still using it.
 resource "aws_security_group" "lambda_sg" {
   name        = "${local.long_name}-lambda-sg"
   description = "Controls access to the Lambda"
@@ -261,12 +262,6 @@ resource "aws_lambda_function" "api_lambda" {
     subnet_ids         = var.private_subnet_ids
     security_group_ids = concat([aws_security_group.lambda_sg.id], var.security_groups)
   }
-
-  #   environment {
-  #     variables = {
-  #       netid = "jvisker"
-  #     }
-  #   }
 }
 
 resource "aws_lambda_alias" "live" {
