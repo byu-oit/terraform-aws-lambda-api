@@ -23,9 +23,6 @@ locals {
       AfterAllowTraffic = null
     }
   ]) : null
-
-  # Hacky workaround for bootstrap issue
-  # is_initial = aws_lambda_alias.initial.function_version == aws_lambda_alias.live.function_version
 }
 
 # ==================== ALB ====================
@@ -316,12 +313,6 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 }
 
 # ==================== AppSpec file ====================
-
-# data "aws_lambda_alias" "alias_for_old_version" {
-#   count = local.is_initial ? 0 : 1
-#   function_name = aws_lambda_function.api_lambda.function_name
-#   name          = "live" //TODO: Make local?
-# }
 
 resource "local_file" "appspec_json" {
   filename = "${path.cwd}/appspec.json"
