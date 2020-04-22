@@ -13,12 +13,6 @@ variable "codedeploy_service_role_arn" {
   description = "ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)"
 }
 
-variable "codedeploy_termination_wait_time" {
-  type        = number
-  description = "The number of minutes to wait after a successful blue/green deployment before terminating instances from the original environment. Defaults to 15"
-  default     = 15
-}
-
 variable "lambda_src_dir" {
   type        = string
   description = "Directory that contains your lambda source code"
