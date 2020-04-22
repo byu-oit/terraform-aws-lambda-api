@@ -46,6 +46,12 @@ variable "codedeploy_lifecycle_hooks" {
   default     = null
 }
 
+variable "codedeploy_test_listener_port" {
+  type        = number
+  description = "The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null"
+  default     = null
+}
+
 variable "vpc_id" {
   type        = string
   description = "VPC ID to deploy ECS fargate service."
@@ -56,7 +62,7 @@ variable "public_subnet_ids" {
 }
 variable "private_subnet_ids" {
   type        = list(string)
-  description = "List of subnet IDs for the fargate service."
+  description = "List of subnet IDs for the Lambda service."
 }
 
 variable "tags" {
@@ -84,6 +90,6 @@ variable "lambda_policies" {
 
 variable "security_groups" {
   type        = list(string)
-  description = "List of extra security group IDs to attach to the fargate task."
+  description = "List of extra security group IDs to attach to the lambda."
   default     = []
 }

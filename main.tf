@@ -56,11 +56,15 @@ resource "aws_security_group" "alb-sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  ingress {
-    from_port   = 4443
-    to_port     = 4443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  // if test listner port is specified, allow traffic
+  dynamic "ingress" {
+    for_each = var.codedeploy_test_listener_port != null ? [1] : []
+    content {
+      from_port   = var.codedeploy_test_listener_port
+      to_port     = var.codedeploy_test_listener_port
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
   // allow any outgoing traffic
   egress {
@@ -208,6 +212,11 @@ resource "aws_iam_role" "iam_for_lambda" {
 EOF
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_eni_attach" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess"
+  role       = aws_iam_role.iam_for_lambda.name
+}
+
 resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
   count      = length(var.lambda_policies)
   policy_arn = element(var.lambda_policies, count.index)
@@ -220,6 +229,22 @@ data "archive_file" "cleanup_lambda_zip" {
   type        = "zip"
 }
 
+resource "aws_security_group" "lambda_sg" {
+  name        = "${local.long_name}-lambda-sg"
+  description = "Controls access to the Lambda"
+  vpc_id      = var.vpc_id
+
+  # ingress not needed as ALB invokes Lambda via AWS API, not direct network traffic
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = var.tags
+}
+
 resource "aws_lambda_function" "api_lambda" {
   filename         = data.archive_file.cleanup_lambda_zip.output_path
   source_code_hash = data.archive_file.cleanup_lambda_zip.output_base64sha256
@@ -229,9 +254,9 @@ resource "aws_lambda_function" "api_lambda" {
   runtime          = "nodejs12.x"
   publish          = true
 
-  vpc_config = {
+  vpc_config {
     subnet_ids         = var.private_subnet_ids
-    security_group_ids = var.lambda_security_groups
+    security_group_ids = concat([aws_security_group.lambda_sg.id], var.security_groups)
   }
 
   #   environment {

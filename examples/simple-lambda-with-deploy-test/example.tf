@@ -19,6 +19,7 @@ module "lambda_api" {
   public_subnet_ids             = module.acs.public_subnet_ids
   private_subnet_ids            = module.acs.private_subnet_ids
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
+  codedeploy_test_listener_port = 4443
 
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
