@@ -82,12 +82,6 @@ variable "lambda_policies" {
   default     = []
 }
 
-variable "private_subnet_ids" {
-  type        = list(string)
-  description = "List of subnet IDs for the fargate service."
-  default     = []
-}
-
 variable "security_groups" {
   type        = list(string)
   description = "List of extra security group IDs to attach to the fargate task."
