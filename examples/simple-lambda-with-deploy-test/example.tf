@@ -8,10 +8,11 @@ module "acs" {
 }
 
 module "lambda_api" {
-  source                        = "../"
+  source                        = "../../"
   app_name                      = "my-lambda"
+  env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
-  lambda_src_dir                = "./my-lambda"
+  lambda_src_dir                = "./src"
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id
@@ -87,4 +88,8 @@ resource "aws_iam_role_policy" "test_lambda" {
   ]
 }
 EOF
+}
+
+output "url" {
+  value = module.lambda_api.dns_record.fqdn
 }

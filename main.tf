@@ -5,100 +5,12 @@ terraform {
   }
 }
 
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
-
-# ==================== Variables ====================
-
-variable "app_name" {
-  type        = string
-  description = "application name"
-}
-
-variable "codedeploy_service_role_arn" {
-  type        = string
-  description = "ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)"
-}
-
-variable "codedeploy_termination_wait_time" {
-  type        = number
-  description = "The number of minutes to wait after a successful blue/green deployment before terminating instances from the original environment. Defaults to 15"
-  default     = 15
-}
-
-variable "lambda_src_dir" {
-  type        = string
-  description = "Directory that contains your lambda source code"
-}
-
-variable "hosted_zone" {
-  type = object({
-    name = string,
-    id   = string
-  })
-  description = "Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone."
-}
-
-variable "https_certificate_arn" {
-  type        = string
-  description = "ARN of the HTTPS certificate of the hosted zone/domain."
-}
-
-variable "codedeploy_lifecycle_hooks" {
-  type = object({
-    BeforeAllowTraffic = string
-    AfterAllowTraffic  = string
-  })
-  description = "Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null"
-  default     = null
-}
-
-variable "vpc_id" {
-  type        = string
-  description = "VPC ID to deploy ECS fargate service."
-}
-variable "public_subnet_ids" {
-  type        = list(string)
-  description = "List of subnet IDs for the ALB."
-}
-variable "private_subnet_ids" {
-  type        = list(string)
-  description = "List of subnet IDs for the fargate service."
-}
-
-variable "tags" {
-  type        = map(string)
-  description = "A map of AWS Tags to attach to each resource created"
-  default     = {}
-}
-
-variable "role_permissions_boundary_arn" {
-  type        = string
-  description = "IAM Role Permissions Boundary ARN"
-}
-
-variable "log_retention_in_days" {
-  type        = number
-  description = "CloudWatch log group retention in days. Defaults to 7."
-  default     = 7
-}
-
-//TODO: Add policies variable for additional policies to attach to the lambda role
-
-# ==================== Outputs ====================
-
-# output "appspec" {
-#   value = local_file.appspec_json.content
-# }
-
-output "dns_record" {
-  value = aws_route53_record.a_record
-}
 # ==================== Locals ====================
 
 locals {
-  alb_name       = "${var.app_name}-alb"                     // ALB name has a restriction of 32 characters max
-  app_domain_url = "${var.app_name}.${var.hosted_zone.name}" // Route53 A record name
+  long_name      = "${var.app_name}-${var.env}"
+  alb_name       = "${local.long_name}-alb"                     // ALB name has a restriction of 32 characters max
+  app_domain_url = "${local.long_name}.${var.hosted_zone.name}" // Route53 A record name
 
   hooks = var.codedeploy_lifecycle_hooks != null ? setsubtract([
     for hook in keys(var.codedeploy_lifecycle_hooks) :
@@ -161,14 +73,14 @@ resource "aws_security_group" "alb-sg" {
 }
 
 resource "aws_alb_target_group" "tg" {
-  name        = "${var.app_name}-tg"
+  name        = "${local.long_name}-tg"
   target_type = "lambda"
   tags        = var.tags
   depends_on  = [aws_alb.alb]
 }
 
 resource "aws_alb_target_group" "tst_tg" {
-  name        = "${var.app_name}-tst"
+  name        = "${local.long_name}-tst"
   target_type = "lambda"
   tags        = var.tags
   depends_on  = [aws_alb.alb]
@@ -296,6 +208,12 @@ resource "aws_iam_role" "iam_for_lambda" {
 EOF
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
+  count      = length(var.lambda_policies)
+  policy_arn = element(var.lambda_policies, count.index)
+  role       = aws_iam_role.iam_for_lambda.name
+}
+
 data "archive_file" "cleanup_lambda_zip" {
   source_dir  = var.lambda_src_dir
   output_path = "lambda_function_payload.zip"
@@ -310,6 +228,11 @@ resource "aws_lambda_function" "api_lambda" {
   handler          = "index.handler"
   runtime          = "nodejs12.x"
   publish          = true
+
+  vpc_config = {
+    subnet_ids = var.private_subnet_ids
+    security_group_ids = var.lambda_security_groups
+  }
 
   #   environment {
   #     variables = {
@@ -350,11 +273,11 @@ resource "aws_lambda_alias" "live" {
 
 resource "aws_codedeploy_app" "app" {
   compute_platform = "Lambda"
-  name             = "${var.app_name}-cd"
+  name             = "${local.long_name}-cd"
 }
 
 # resource "aws_codedeploy_deployment_config" "config" {
-#   deployment_config_name = "${var.app_name}-cfg"
+#   deployment_config_name = "${local.long_name}-cfg"
 #   compute_platform       = "Lambda"
 
 #   //TODO: There are other ways to configure this
@@ -370,7 +293,7 @@ resource "aws_codedeploy_app" "app" {
 
 resource "aws_codedeploy_deployment_group" "deployment_group" {
   app_name               = aws_codedeploy_app.app.name
-  deployment_group_name  = "${var.app_name}-dg"
+  deployment_group_name  = "${local.long_name}-dg"
   service_role_arn       = var.codedeploy_service_role_arn
   deployment_config_name = "CodeDeployDefault.LambdaAllAtOnce"
   deployment_style {
