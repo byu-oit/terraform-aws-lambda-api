@@ -13,6 +13,8 @@ module "lambda_api" {
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
   lambda_src_dir                = "./src"
+  handler                       = "index.handler"
+  runtime                       = "nodejs12.x"
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id

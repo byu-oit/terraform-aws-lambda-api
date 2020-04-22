@@ -28,7 +28,6 @@ locals {
   # is_initial = aws_lambda_alias.initial.function_version == aws_lambda_alias.live.function_version
 }
 
-
 # ==================== ALB ====================
 
 resource "aws_alb" "alb" {
@@ -248,10 +247,10 @@ resource "aws_security_group" "lambda_sg" {
 resource "aws_lambda_function" "api_lambda" {
   filename         = data.archive_file.cleanup_lambda_zip.output_path
   source_code_hash = data.archive_file.cleanup_lambda_zip.output_base64sha256
-  function_name    = "my-lambda"
+  function_name    = local.long_name
   role             = aws_iam_role.iam_for_lambda.arn
-  handler          = "index.handler"
-  runtime          = "nodejs12.x"
+  handler          = var.handler
+  runtime          = var.runtime
   publish          = true
 
   vpc_config {
@@ -268,7 +267,7 @@ resource "aws_lambda_function" "api_lambda" {
 
 resource "aws_lambda_alias" "live" {
   name          = "live"
-  description   = "a sample description" //TODO:
+  description   = "ALB sends traffic to this version"
   function_name = aws_lambda_function.api_lambda.arn
   # Get the version of the lambda when it is first created
   function_version = aws_lambda_function.api_lambda.version
@@ -280,41 +279,12 @@ resource "aws_lambda_alias" "live" {
   }
 }
 
-# resource "aws_lambda_alias" "initial" {
-#   name             = "initial"
-#   description      = "a sample description" //TODO:
-#   function_name    = aws_lambda_function.api_lambda.arn
-#   # Get the version of the lambda when it is first created
-#   function_version = aws_lambda_function.api_lambda.version
-#   # Let CodeDeploy handle changes to the function version that this alias refers to
-#   lifecycle {
-#     ignore_changes = [
-#       function_version
-#     ]
-#   }
-# }
-
 # ==================== CodeDeploy ====================
 
 resource "aws_codedeploy_app" "app" {
   compute_platform = "Lambda"
   name             = "${local.long_name}-cd"
 }
-
-# resource "aws_codedeploy_deployment_config" "config" {
-#   deployment_config_name = "${local.long_name}-cfg"
-#   compute_platform       = "Lambda"
-
-#   //TODO: There are other ways to configure this
-#   traffic_routing_config {
-#     type = "TimeBasedLinear"
-
-#     time_based_linear {
-#       interval   = 10
-#       percentage = 10
-#     }
-#   }
-# }
 
 resource "aws_codedeploy_deployment_group" "deployment_group" {
   app_name               = aws_codedeploy_app.app.name
@@ -331,7 +301,6 @@ resource "aws_codedeploy_deployment_group" "deployment_group" {
     events  = ["DEPLOYMENT_FAILURE"]
   }
 }
-
 
 # ==================== CloudWatch ====================
 

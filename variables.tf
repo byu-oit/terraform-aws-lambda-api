@@ -18,6 +18,16 @@ variable "lambda_src_dir" {
   description = "Directory that contains your lambda source code"
 }
 
+variable "handler" {
+  type        = string
+  description = "Lambda event handler"
+}
+
+variable "runtime" {
+  type        = string
+  description = "Lambda runtime"
+}
+
 variable "hosted_zone" {
   type = object({
     name = string,
