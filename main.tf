@@ -230,7 +230,7 @@ resource "aws_lambda_function" "api_lambda" {
   publish          = true
 
   vpc_config = {
-    subnet_ids = var.private_subnet_ids
+    subnet_ids         = var.private_subnet_ids
     security_group_ids = var.lambda_security_groups
   }
 
@@ -242,9 +242,9 @@ resource "aws_lambda_function" "api_lambda" {
 }
 
 resource "aws_lambda_alias" "live" {
-  name             = "live"
-  description      = "a sample description" //TODO:
-  function_name    = aws_lambda_function.api_lambda.arn
+  name          = "live"
+  description   = "a sample description" //TODO:
+  function_name = aws_lambda_function.api_lambda.arn
   # Get the version of the lambda when it is first created
   function_version = aws_lambda_function.api_lambda.version
   # Let CodeDeploy handle changes to the function version that this alias refers to
@@ -337,10 +337,10 @@ resource "local_file" "appspec_json" {
       apiLambdaFunction = {
         Type = "AWS::Lambda::Function"
         Properties = {
-          Name           = aws_lambda_function.api_lambda.function_name
-          Alias          = aws_lambda_alias.live.name
+          Name  = aws_lambda_function.api_lambda.function_name
+          Alias = aws_lambda_alias.live.name
           # CurrentVersion = local.is_initial ? aws_lambda_alias.initial.function_version : data.aws_lambda_alias.alias_for_old_version[0].function_version
-          TargetVersion  = aws_lambda_function.api_lambda.version
+          TargetVersion = aws_lambda_function.api_lambda.version
         }
       }
     }],
