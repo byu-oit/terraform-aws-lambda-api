@@ -12,7 +12,7 @@ module "lambda_api" {
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
-  lambda_src_dir                = "./src"
+  lambda_zip_file               = "./src"
   handler                       = "index.handler"
   runtime                       = "nodejs12.x"
   hosted_zone                   = module.acs.route53_zone
