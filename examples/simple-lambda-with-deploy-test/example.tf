@@ -8,11 +8,12 @@ module "acs" {
 }
 
 module "lambda_api" {
-  source                        = "../../"
+  // source                        = "../../"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v0.0.2"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
-  lambda_src_dir                = "./src"
+  lambda_zip_file               = "./src/lambda.zip"
   handler                       = "index.handler"
   runtime                       = "nodejs12.x"
   hosted_zone                   = module.acs.route53_zone

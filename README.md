@@ -18,11 +18,11 @@ This is done by:
 ## Usage
 ```hcl
 module "lambda_api" {
-  source                        = "../../"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v0.0.2"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
-  lambda_src_dir                = "./src"
+  lambda_zip_file               = "./src/lambda.zip"
   handler                       = "index.handler"
   runtime                       = "nodejs12.x"
   hosted_zone                   = module.acs.route53_zone
@@ -69,7 +69,7 @@ module "lambda_api" {
 | app_name | string | application name |
 | env | string | application environment (e.g. dev, stg, prd) |
 | codedeploy_service_role_arn | string | ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role) |
-| lambda_src_dir | string | Directory that contains your lambda source code |
+| lambda_zip_file | string | File that contains your compiled or zipped source code. |
 | handler | string | Lambda event handler |
 | runtime | string | Lambda runtime |
 | environment_variables | map(string) | A map that defines environment variables for the Lambda function. |

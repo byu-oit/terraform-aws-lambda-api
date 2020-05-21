@@ -13,9 +13,9 @@ variable "codedeploy_service_role_arn" {
   description = "ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)"
 }
 
-variable "lambda_src_dir" {
+variable "lambda_zip_file" {
   type        = string
-  description = "Directory that contains your lambda source code"
+  description = "File that contains your compiled or zipped source code."
 }
 
 variable "handler" {

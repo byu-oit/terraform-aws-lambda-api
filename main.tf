@@ -219,12 +219,6 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
   role       = aws_iam_role.iam_for_lambda.name
 }
 
-data "archive_file" "cleanup_lambda_zip" {
-  source_dir  = var.lambda_src_dir
-  output_path = "lambda_function_payload.zip"
-  type        = "zip"
-}
-
 # TODO: the SG fails to destroy because the lambda's ENI is still using it.
 resource "aws_security_group" "lambda_sg" {
   name        = "${local.long_name}-lambda-sg"
@@ -243,8 +237,8 @@ resource "aws_security_group" "lambda_sg" {
 }
 
 resource "aws_lambda_function" "api_lambda" {
-  filename         = data.archive_file.cleanup_lambda_zip.output_path
-  source_code_hash = data.archive_file.cleanup_lambda_zip.output_base64sha256
+  filename         = var.lambda_zip_file
+  source_code_hash = filebase64sha256(var.lambda_zip_file)
   function_name    = local.long_name
   role             = aws_iam_role.iam_for_lambda.arn
   handler          = var.handler
