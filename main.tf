@@ -238,6 +238,7 @@ resource "aws_security_group" "lambda_sg" {
 
 resource "aws_lambda_function" "api_lambda" {
   filename         = var.lambda_zip_file
+  source_code_hash = filebase64sha256(var.lambda_zip_file)
   function_name    = local.long_name
   role             = aws_iam_role.iam_for_lambda.arn
   handler          = var.handler
