@@ -15,7 +15,7 @@ output "codedeploy_deployment_group" {
 }
 
 output "codedeploy_appspec_json_file" {
-  value = var.use_codedeploy ? local_file.appspec_json[0].filename : null
+  value = var.use_codedeploy ? local_file.appspec_json.*.filename : null
 }
 
 output "alb" {
