@@ -140,7 +140,7 @@ resource "aws_lambda_permission" "with_lb" {
   function_name = aws_lambda_function.api_lambda.arn
   principal     = "elasticloadbalancing.amazonaws.com"
   source_arn    = aws_alb_target_group.tg.arn
-  qualifier     = aws_lambda_alias.live.name
+  qualifier     = var.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].name : aws_lambda_alias.live[0].name
 }
 
 resource "aws_lambda_permission" "with_tst_lb" {
@@ -153,7 +153,7 @@ resource "aws_lambda_permission" "with_tst_lb" {
 
 resource "aws_alb_target_group_attachment" "live_attachment" {
   target_group_arn = aws_alb_target_group.tg.arn
-  target_id        = aws_lambda_alias.live.arn
+  target_id        = var.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].arn : aws_lambda_alias.live[0].arn
   depends_on       = [aws_lambda_permission.with_lb]
 }
 
@@ -189,7 +189,7 @@ resource "aws_route53_record" "aaaa_record" {
 # ==================== Lambda ====================
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name                 = "iam_for_lambda"
+  name                 = "${local.long_name}-role"
   permissions_boundary = var.role_permissions_boundary_arn
   assume_role_policy   = <<EOF
 {
@@ -259,6 +259,15 @@ resource "aws_lambda_function" "api_lambda" {
 }
 
 resource "aws_lambda_alias" "live" {
+  count = !var.use_codedeploy ? 1 : 0
+  name          = "live"
+  description   = "ALB sends traffic to this version"
+  function_name = aws_lambda_function.api_lambda.arn
+  function_version = aws_lambda_function.api_lambda.version
+}
+
+resource "aws_lambda_alias" "live_codedeploy" {
+  count = var.use_codedeploy ? 1 : 0
   name          = "live"
   description   = "ALB sends traffic to this version"
   function_name = aws_lambda_function.api_lambda.arn
@@ -275,12 +284,14 @@ resource "aws_lambda_alias" "live" {
 # ==================== CodeDeploy ====================
 
 resource "aws_codedeploy_app" "app" {
+  count = var.use_codedeploy ? 1 : 0
   compute_platform = "Lambda"
   name             = "${local.long_name}-cd"
 }
 
 resource "aws_codedeploy_deployment_group" "deployment_group" {
-  app_name               = aws_codedeploy_app.app.name
+  count = var.use_codedeploy ? 1 : 0
+  app_name               = aws_codedeploy_app.app[0].name
   deployment_group_name  = "${local.long_name}-dg"
   service_role_arn       = var.codedeploy_service_role_arn
   deployment_config_name = "CodeDeployDefault.LambdaAllAtOnce"
@@ -311,6 +322,7 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 # ==================== AppSpec file ====================
 
 resource "local_file" "appspec_json" {
+  count = var.use_codedeploy ? 1 : 0
   filename = "${path.cwd}/appspec.json"
   content = jsonencode({
     version = 1
@@ -319,8 +331,8 @@ resource "local_file" "appspec_json" {
         Type = "AWS::Lambda::Function"
         Properties = {
           Name  = aws_lambda_function.api_lambda.function_name
-          Alias = aws_lambda_alias.live.name
-          # CurrentVersion = local.is_initial ? aws_lambda_alias.initial.function_version : data.aws_lambda_alias.alias_for_old_version[0].function_version
+          Alias = aws_lambda_alias.live_codedeploy[0].name
+          CurrentVersion = aws_lambda_function.api_lambda.version # TODO: figure out how to get previous version for rollback
           TargetVersion = aws_lambda_function.api_lambda.version
         }
       }

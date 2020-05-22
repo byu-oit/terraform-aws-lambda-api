@@ -11,6 +11,7 @@ variable "env" {
 variable "codedeploy_service_role_arn" {
   type        = string
   description = "ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)"
+  default     = null
 }
 
 variable "lambda_zip_file" {
@@ -102,4 +103,10 @@ variable "security_groups" {
   type        = list(string)
   description = "List of extra security group IDs to attach to the lambda."
   default     = []
+}
+
+variable "use_codedeploy" {
+  type        = bool
+  description = "If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that)."
+  default     = false
 }

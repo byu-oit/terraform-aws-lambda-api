@@ -29,10 +29,10 @@
 					"raw": ""
 				},
 				"url": {
-					"raw": "https://my-lambda.byu-oit-terraform-dev.amazon.byu.edu:4443/",
+					"raw": "https://my-lambda-codedeploy-dev.byu-oit-terraform-dev.amazon.byu.edu:4443/",
 					"protocol": "https",
 					"host": [
-						"my-lambda",
+						"my-lambda-codedeploy-dev",
 						"byu-oit-terraform-dev",
 						"amazon",
 						"byu",
