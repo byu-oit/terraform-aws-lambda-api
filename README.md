@@ -18,7 +18,7 @@ This is done by:
 ## Usage
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v0.0.2"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v0.1.0"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
@@ -85,6 +85,7 @@ module "lambda_api" {
 | log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7
 | lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []
 | security_groups | list(string) | List of extra security group IDs to attach to the lambda. | []
+| use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
 
 #### codedeploy_lifecycle_hooks
 
