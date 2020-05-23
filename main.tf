@@ -332,7 +332,7 @@ resource "local_file" "appspec_json" {
         Properties = {
           Name  = aws_lambda_function.api_lambda.function_name
           Alias = aws_lambda_alias.live_codedeploy[0].name
-          CurrentVersion = aws_lambda_alias.live_codedeploy.function_version
+          CurrentVersion = aws_lambda_alias.live_codedeploy[0].function_version
           TargetVersion = aws_lambda_function.api_lambda.version
         }
       }
