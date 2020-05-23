@@ -18,7 +18,7 @@ This is done by:
 ## Usage
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v0.1.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v0.2.0"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn

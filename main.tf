@@ -80,6 +80,7 @@ resource "aws_alb_target_group" "tg" {
 }
 
 resource "aws_alb_target_group" "tst_tg" {
+  count       = var.use_codedeploy ? 1 : 0
   name        = "${local.long_name}-tst"
   target_type = "lambda"
   tags        = var.tags
@@ -104,13 +105,14 @@ resource "aws_alb_listener" "https" {
 }
 
 resource "aws_alb_listener" "test_https" {
+  count             = var.use_codedeploy ? 1 : 0
   load_balancer_arn = aws_alb.alb.arn
   port              = 4443
   protocol          = "HTTPS"
   certificate_arn   = var.https_certificate_arn
   default_action {
     type             = "forward"
-    target_group_arn = aws_alb_target_group.tst_tg.arn
+    target_group_arn = aws_alb_target_group.tst_tg[0].arn
   }
   lifecycle {
     ignore_changes = [default_action[0].target_group_arn]
@@ -144,11 +146,12 @@ resource "aws_lambda_permission" "with_lb" {
 }
 
 resource "aws_lambda_permission" "with_tst_lb" {
+  count         = var.use_codedeploy ? 1 : 0
   statement_id  = "AllowExecutionFromlb"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api_lambda.arn
   principal     = "elasticloadbalancing.amazonaws.com"
-  source_arn    = aws_alb_target_group.tst_tg.arn
+  source_arn    = aws_alb_target_group.tst_tg[0].arn
 }
 
 resource "aws_alb_target_group_attachment" "live_attachment" {
@@ -158,7 +161,8 @@ resource "aws_alb_target_group_attachment" "live_attachment" {
 }
 
 resource "aws_alb_target_group_attachment" "tst_attachment" {
-  target_group_arn = aws_alb_target_group.tst_tg.arn
+  count            = var.use_codedeploy ? 1 : 0
+  target_group_arn = aws_alb_target_group.tst_tg[0].arn
   target_id        = aws_lambda_function.api_lambda.arn # Latest
   depends_on       = [aws_lambda_permission.with_tst_lb]
 }
@@ -259,15 +263,15 @@ resource "aws_lambda_function" "api_lambda" {
 }
 
 resource "aws_lambda_alias" "live" {
-  count = !var.use_codedeploy ? 1 : 0
-  name          = "live"
-  description   = "ALB sends traffic to this version"
-  function_name = aws_lambda_function.api_lambda.arn
+  count            = ! var.use_codedeploy ? 1 : 0
+  name             = "live"
+  description      = "ALB sends traffic to this version"
+  function_name    = aws_lambda_function.api_lambda.arn
   function_version = aws_lambda_function.api_lambda.version
 }
 
 resource "aws_lambda_alias" "live_codedeploy" {
-  count = var.use_codedeploy ? 1 : 0
+  count         = var.use_codedeploy ? 1 : 0
   name          = "live"
   description   = "ALB sends traffic to this version"
   function_name = aws_lambda_function.api_lambda.arn
@@ -284,13 +288,13 @@ resource "aws_lambda_alias" "live_codedeploy" {
 # ==================== CodeDeploy ====================
 
 resource "aws_codedeploy_app" "app" {
-  count = var.use_codedeploy ? 1 : 0
+  count            = var.use_codedeploy ? 1 : 0
   compute_platform = "Lambda"
   name             = "${local.long_name}-cd"
 }
 
 resource "aws_codedeploy_deployment_group" "deployment_group" {
-  count = var.use_codedeploy ? 1 : 0
+  count                  = var.use_codedeploy ? 1 : 0
   app_name               = aws_codedeploy_app.app[0].name
   deployment_group_name  = "${local.long_name}-dg"
   service_role_arn       = var.codedeploy_service_role_arn
@@ -322,7 +326,7 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 # ==================== AppSpec file ====================
 
 resource "local_file" "appspec_json" {
-  count = var.use_codedeploy ? 1 : 0
+  count    = var.use_codedeploy ? 1 : 0
   filename = "${path.cwd}/appspec.json"
   content = jsonencode({
     version = 1
@@ -330,10 +334,10 @@ resource "local_file" "appspec_json" {
       apiLambdaFunction = {
         Type = "AWS::Lambda::Function"
         Properties = {
-          Name  = aws_lambda_function.api_lambda.function_name
-          Alias = aws_lambda_alias.live_codedeploy[0].name
-          CurrentVersion = aws_lambda_function.api_lambda.version # TODO: figure out how to get previous version for rollback
-          TargetVersion = aws_lambda_function.api_lambda.version
+          Name           = aws_lambda_function.api_lambda.function_name
+          Alias          = aws_lambda_alias.live_codedeploy[0].name
+          CurrentVersion = aws_lambda_alias.live_codedeploy[0].function_version
+          TargetVersion  = aws_lambda_function.api_lambda.version
         }
       }
     }],

@@ -7,15 +7,15 @@ output "lambda_security_group" {
 }
 
 output "lambda_live_alias" {
-  value = var.use_codedeploy ? aws_lambda_alias.live_codedeploy[0] : aws_lambda_alias.live[0]
+  value = length(aws_lambda_alias.live_codedeploy) > 0 ? aws_lambda_alias.live_codedeploy[0] : aws_lambda_alias.live[0]
 }
 
 output "codedeploy_deployment_group" {
-  value = var.use_codedeploy ? aws_codedeploy_deployment_group.deployment_group[0] : null
+  value = length(aws_codedeploy_deployment_group.deployment_group) > 0 ? aws_codedeploy_deployment_group.deployment_group[0] : null
 }
 
 output "codedeploy_appspec_json_file" {
-  value = var.use_codedeploy ? local_file.appspec_json[0].filename : null
+  value = length(local_file.appspec_json) > 0 ? local_file.appspec_json[0].filename : null
 }
 
 output "alb" {
