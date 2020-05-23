@@ -263,15 +263,15 @@ resource "aws_lambda_function" "api_lambda" {
 }
 
 resource "aws_lambda_alias" "live" {
-  count = !var.use_codedeploy ? 1 : 0
-  name          = "live"
-  description   = "ALB sends traffic to this version"
-  function_name = aws_lambda_function.api_lambda.arn
+  count            = ! var.use_codedeploy ? 1 : 0
+  name             = "live"
+  description      = "ALB sends traffic to this version"
+  function_name    = aws_lambda_function.api_lambda.arn
   function_version = aws_lambda_function.api_lambda.version
 }
 
 resource "aws_lambda_alias" "live_codedeploy" {
-  count = var.use_codedeploy ? 1 : 0
+  count         = var.use_codedeploy ? 1 : 0
   name          = "live"
   description   = "ALB sends traffic to this version"
   function_name = aws_lambda_function.api_lambda.arn
@@ -288,13 +288,13 @@ resource "aws_lambda_alias" "live_codedeploy" {
 # ==================== CodeDeploy ====================
 
 resource "aws_codedeploy_app" "app" {
-  count = var.use_codedeploy ? 1 : 0
+  count            = var.use_codedeploy ? 1 : 0
   compute_platform = "Lambda"
   name             = "${local.long_name}-cd"
 }
 
 resource "aws_codedeploy_deployment_group" "deployment_group" {
-  count = var.use_codedeploy ? 1 : 0
+  count                  = var.use_codedeploy ? 1 : 0
   app_name               = aws_codedeploy_app.app[0].name
   deployment_group_name  = "${local.long_name}-dg"
   service_role_arn       = var.codedeploy_service_role_arn
@@ -326,7 +326,7 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 # ==================== AppSpec file ====================
 
 resource "local_file" "appspec_json" {
-  count = var.use_codedeploy ? 1 : 0
+  count    = var.use_codedeploy ? 1 : 0
   filename = "${path.cwd}/appspec.json"
   content = jsonencode({
     version = 1
@@ -334,10 +334,10 @@ resource "local_file" "appspec_json" {
       apiLambdaFunction = {
         Type = "AWS::Lambda::Function"
         Properties = {
-          Name  = aws_lambda_function.api_lambda.function_name
-          Alias = aws_lambda_alias.live_codedeploy[0].name
+          Name           = aws_lambda_function.api_lambda.function_name
+          Alias          = aws_lambda_alias.live_codedeploy[0].name
           CurrentVersion = aws_lambda_alias.live_codedeploy[0].function_version
-          TargetVersion = aws_lambda_function.api_lambda.version
+          TargetVersion  = aws_lambda_function.api_lambda.version
         }
       }
     }],
