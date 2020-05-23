@@ -80,6 +80,7 @@ resource "aws_alb_target_group" "tg" {
 }
 
 resource "aws_alb_target_group" "tst_tg" {
+  count       = var.use_codedeploy ? 1 : 0
   name        = "${local.long_name}-tst"
   target_type = "lambda"
   tags        = var.tags
@@ -104,13 +105,14 @@ resource "aws_alb_listener" "https" {
 }
 
 resource "aws_alb_listener" "test_https" {
+  count             = var.use_codedeploy ? 1 : 0
   load_balancer_arn = aws_alb.alb.arn
   port              = 4443
   protocol          = "HTTPS"
   certificate_arn   = var.https_certificate_arn
   default_action {
     type             = "forward"
-    target_group_arn = aws_alb_target_group.tst_tg.arn
+    target_group_arn = aws_alb_target_group.tst_tg[0].arn
   }
   lifecycle {
     ignore_changes = [default_action[0].target_group_arn]
@@ -144,11 +146,12 @@ resource "aws_lambda_permission" "with_lb" {
 }
 
 resource "aws_lambda_permission" "with_tst_lb" {
+  count         = var.use_codedeploy ? 1 : 0
   statement_id  = "AllowExecutionFromlb"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.api_lambda.arn
   principal     = "elasticloadbalancing.amazonaws.com"
-  source_arn    = aws_alb_target_group.tst_tg.arn
+  source_arn    = aws_alb_target_group.tst_tg[0].arn
 }
 
 resource "aws_alb_target_group_attachment" "live_attachment" {
@@ -158,7 +161,8 @@ resource "aws_alb_target_group_attachment" "live_attachment" {
 }
 
 resource "aws_alb_target_group_attachment" "tst_attachment" {
-  target_group_arn = aws_alb_target_group.tst_tg.arn
+  count            = var.use_codedeploy ? 1 : 0
+  target_group_arn = aws_alb_target_group.tst_tg[0].arn
   target_id        = aws_lambda_function.api_lambda.arn # Latest
   depends_on       = [aws_lambda_permission.with_tst_lb]
 }
