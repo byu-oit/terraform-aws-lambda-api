@@ -5,15 +5,23 @@ Terraform module pattern to build a standard Lambda API.
 
 #### [New to Terraform Modules at BYU?](https://github.com/byu-oit/terraform-documentation)
 
-This module uses CodeDeploy to deploy a Lambda behind an ALB.
+This module deploys a Lambda behind an ALB.
 
-Before switching production traffic to the new Lambda, CodeDeploy runs Postman tests.
-This is done by:
+## CodeDeploy Option
+
+Optionally, CodeDeploy can be used to perform "blue/green" deployments of new versions of the Lambda.
+
+Before switching production traffic to the new Lambda, CodeDeploy runs Postman tests. This is done by:
+
  * Having all production traffic (port `443`) sent to the Lambda version considered `live`
  * Creating and deploying the new untested Lambda version to `$LATEST`
  * Invoking a separate "test" Lambda that runs Postman tests
    - These tests run against the port specified by `codedeploy_test_listener_port`, which corresponds to `$LATEST`
- * If the tests pass, we give the alias `live` to the now-tested `$LATEST` version of the Lambda
+ * If the tests pass, we move the `live` alias to the now-tested `$LATEST` version of the Lambda
+
+Note: If you do not specify `use_codedeploy = true`, the above process will not apply. Instead, the `live` alias will be updated directly by `terraform apply`.
+
+Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambda. If you are using CodePipeline, you cannot specify `use_codedeploy = true`. CodeDeploy works fine with other pipelining tools (e.g. GitHub Actions).
 
 ## Usage
 ```hcl
@@ -32,6 +40,7 @@ module "lambda_api" {
   private_subnet_ids            = module.acs.private_subnet_ids
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
   codedeploy_test_listener_port = 4443
+  use_codedeploy                = true
 
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
@@ -40,24 +49,22 @@ module "lambda_api" {
 }
 ```
 ## Created Resources
-##### TODO fix this section (copy pasta from standard fargate)
 
-* ECS Cluster
-* ECS Service
+* Lambda Function
+    * with IAM role and policies
     * with security group
-* ECS Task Definition
-    * with IAM role
+    * with "live" alias (for blue-green deployment)
 * CloudWatch Log Group
 * ALB
     * with security group
-* 2 Target Groups (for blue-green deployment)
+    * with listeners and target groups
+        * 80 (redirects to 443)
+        * 443 (HTTPS forwards to "live")
+        * test_listener_port (HTTPS forwards to "latest")
 * CodeDeploy App
     * with IAM role
 * CodeDeploy Group
 * DNS A-Record
-* AutoScaling Target
-* AutoScaling Policies (one for stepping up and one for stepping down)
-* CloudWatch Metric Alarms (one for stepping up and one for stepping down)
 
 ## Requirements
 * Terraform version 0.12.21 or greater
@@ -110,13 +117,20 @@ This module will create a CloudWatch log group named `/aws/lambda/<app_name>-<en
 For instance with the [above example](#usage) the logs could be found in the CloudWatch log group: `aws/lambda/my-lambda-dev`.
 
 ## Outputs
-##### TODO fill out this section
 
 | Name | Type | Description |
 | ---  | ---  | --- |
+| lambda | [object](https://www.terraform.io/docs/providers/aws/r/lambda_function.html#argument-reference) | The Lambda that handles API requests |
+| lambda_security_group | [object](https://www.terraform.io/docs/providers/aws/r/security_group.html#argument-reference) | Controls what the Lambda can access |
+| lambda_live_alias | [object](https://www.terraform.io/docs/providers/aws/r/lambda_alias.html#argument-reference) | Controls which version of the Lambda receives "live" traffic |
+| codedeploy_deployment_group | [object](https://www.terraform.io/docs/providers/aws/r/codedeploy_deployment_group.html#argument-reference) | The CodeDeploy deployment group object. |
+| codedeploy_appspec_json_file | string | Filename of the generated appspec.json file |
+| alb | [object](https://www.terraform.io/docs/providers/aws/r/lb.html#argument-reference) | The Application Load Balancer (ALB) object |
+| alb_security_group | [object](https://www.terraform.io/docs/providers/aws/r/security_group.html#argument-reference) | The ALB's security group object |
+| dns_record | [object](https://www.terraform.io/docs/providers/aws/r/route53_record.html#argument-reference) | The DNS A-record mapped to the ALB |
+| cloudwatch_log_group | [object](https://www.terraform.io/docs/providers/aws/r/cloudwatch_log_group.html#argument-reference) | The log group for the Lambda's logs |
 
 #### appspec
-##### TODO fix this section (copy pasta from standard fargate)
 
 This module also creates a JSON file in the project directory: `appspec.json` used to initiate a CodeDeploy Deployment.
 
@@ -125,15 +139,14 @@ Here's an example appspec.json file this creates:
 {
   "Resources": [
     {
-      "TargetService": {
+      "apiLambdaFunction": {
         "Properties": {
-          "LoadBalancerInfo": {
-            "ContainerName": "example",
-            "ContainerPort": 8000
-          },
-          "TaskDefinition": "arn:aws:ecs:us-west-2:123456789123:task-definition/example-api-def:2"
+          "Alias": "live",
+          "CurrentVersion": "6",
+          "Name": "my-lambda-codedeploy-dev",
+          "TargetVersion": "6"
         },
-        "Type": "AWS::ECS::SERVICE"
+        "Type": "AWS::Lambda::Function"
       }
     }
   ],
@@ -145,32 +158,19 @@ And example with [lifecycle hooks](#codedeploy_lifecycle_hooks):
 {
   "Hooks": [
     {
-      "BeforeInstall": null
-    },
-    {
-      "AfterInstall": "AfterInstallHookFunctionName"
-    },
-    {
-      "AfterAllowTestTraffic": "AfterAllowTestTrafficHookFunctionName"
-    },
-    {
-      "BeforeAllowTraffic": null
-    },
-    {
-      "AfterAllowTraffic": null
+      "BeforeAllowTraffic": "my-lambda-deploy-test"
     }
   ],
   "Resources": [
     {
-      "TargetService": {
+      "apiLambdaFunction": {
         "Properties": {
-          "LoadBalancerInfo": {
-            "ContainerName": "example",
-            "ContainerPort": 8000
-          },
-          "TaskDefinition": "arn:aws:ecs:us-west-2:123456789123:task-definition/example-api-def:2"
+          "Alias": "live",
+          "CurrentVersion": "6",
+          "Name": "my-lambda-codedeploy-dev",
+          "TargetVersion": "6"
         },
-        "Type": "AWS::ECS::SERVICE"
+        "Type": "AWS::Lambda::Function"
       }
     }
   ],
@@ -179,23 +179,22 @@ And example with [lifecycle hooks](#codedeploy_lifecycle_hooks):
 ```
 
 ## CodeDeploy Blue-Green Deployment
-##### TODO fix this section (copy pasta from standard fargate)
 
-This module creates a blue-green deployment process with CodeDeploy. If a `codedeploy_test_listener_port` is provided 
-this module will create an ALB listener that will allow public traffic from that port to the running lambda.
+If `use_codedeploy = true` is specified, this module creates a blue-green deployment process with CodeDeploy. If a `codedeploy_test_listener_port` is provided this module will create an ALB listener that will allow public traffic from that port to the running lambda.
 
 When a CodeDeploy deployment is initiated (either via a pipeline or manually) CodeDeploy will:
-1. call lambda function defined for `BeforeInstall` hook
-2. attempt to create a new set of tasks (called the replacement set) with the new task definition etc. in the unused ALB Target Group
-3. call lambda function defined for `AfterInstall` hook
-4. associate the test listener (if defined) to the new target group
-5. call lambda function defined for `AfterAllowTestTraffic` hook
-6. call lambda function defined for `BeforeAllowTraffic` hook
-7. associate the production listener to the new target group
-8. call lambda function defined for `AfterAllowTraffic` hook
-9. wait for the `codedeploy_termination_wait_time` in minutes before destroying the original task set (this is useful if you need to manually rollback)
+1. call lambda function defined for `BeforeAllowTraffic` hook
+2. associate the "live" alias "TargetVersion"
+3. call lambda function defined for `AfterAllowTraffic` hook
 
-At any step (except step #1) the deployment can rollback (either manually or by the lambda functions in the lifecycle hooks or if there was an error trying to actually deploy)
+At any step the deployment can rollback (either manually or by the lambda functions in the lifecycle hooks or if there was an error trying to actually deploy)
+
+If manual rollback is needed after the deployment has completed, that can be done in the Lambda Console:
+1. Select your Lambda Function.
+2. Select a function alias (aka. "Qualifier")
+3. Click the "Edit alias" button
+4. Select the version you want to roll back to
+5. Click "Save"
 
 ##### TODO add diagrams to explain the blue-green deployment process 
 

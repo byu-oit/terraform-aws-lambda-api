@@ -156,7 +156,7 @@ resource "aws_lambda_permission" "with_tst_lb" {
 
 resource "aws_alb_target_group_attachment" "live_attachment" {
   target_group_arn = aws_alb_target_group.tg.arn
-  target_id        = var.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].arn : aws_lambda_alias.live[0].arn
+  target_id        = var.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].arn : aws_lambda_alias.live[0].arn #Live
   depends_on       = [aws_lambda_permission.with_lb]
 }
 
@@ -223,7 +223,6 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
   role       = aws_iam_role.iam_for_lambda.name
 }
 
-# TODO: the SG fails to destroy because the lambda's ENI is still using it.
 resource "aws_security_group" "lambda_sg" {
   name        = "${local.long_name}-lambda-sg"
   description = "Controls access to the Lambda"
