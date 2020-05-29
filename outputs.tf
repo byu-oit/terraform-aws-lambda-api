@@ -3,7 +3,7 @@ output "lambda" {
 }
 
 output "lambda_security_group" {
-  value = aws_security_group.lambda_sg
+  value = length(aws_security_group.lambda_sg) > 0 ? aws_security_group.lambda_sg : null
 }
 
 output "lambda_live_alias" {
