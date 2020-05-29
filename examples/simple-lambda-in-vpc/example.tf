@@ -20,6 +20,11 @@ module "lambda_api" {
   vpc_id                        = module.acs.vpc.id
   public_subnet_ids             = module.acs.public_subnet_ids
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
+
+  lambda_vpc_config = {
+    subnet_ids         = module.acs.private_subnet_ids
+    security_group_ids = []
+  }
 }
 
 output "url" {
