@@ -224,6 +224,7 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
 }
 
 resource "aws_security_group" "lambda_sg" {
+  count       = var.lambda_vpc_config != null ? 1 : 0
   name        = "${local.long_name}-lambda-sg"
   description = "Controls access to the Lambda"
   vpc_id      = var.vpc_id
@@ -255,9 +256,12 @@ resource "aws_lambda_function" "api_lambda" {
     }
   }
 
-  vpc_config {
-    subnet_ids         = var.private_subnet_ids
-    security_group_ids = concat([aws_security_group.lambda_sg.id], var.security_groups)
+  dynamic "vpc_config" {
+    for_each = var.lambda_vpc_config == null ? [] : [var.lambda_vpc_config]
+    content {
+      subnet_ids         = lambda_vpc_config.value.subnet_ids
+      security_group_ids = concat([aws_security_group.lambda_sg.id], lambda_vpc_config.value.security_group_ids)
+    }
   }
 }
 
