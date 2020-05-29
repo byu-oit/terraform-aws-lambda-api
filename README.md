@@ -37,10 +37,14 @@ module "lambda_api" {
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id
   public_subnet_ids             = module.acs.public_subnet_ids
-  private_subnet_ids            = module.acs.private_subnet_ids
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
   codedeploy_test_listener_port = 4443
   use_codedeploy                = true
+
+  lambda_vpc_config = {
+    subnet_ids         = module.acs.private_subnet_ids
+    security_group_ids = ["sg-3asdfadsfasdfas"]
+  }
 
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
@@ -79,20 +83,26 @@ module "lambda_api" {
 | lambda_zip_file | string | File that contains your compiled or zipped source code. |
 | handler | string | Lambda event handler |
 | runtime | string | Lambda runtime |
+| lambda_vpc_config | [object](#lambda_vpc_config) | Lambda VPC object. Used if lambda requires to run inside a VPC | null
 | environment_variables | map(string) | A map that defines environment variables for the Lambda function. |
 | hosted_zone | [object](#hosted_zone) | Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone. |
 | https_certificate_arn | string | ARN of the HTTPS certificate of the hosted zone/domain. |
 | codedeploy_lifecycle_hooks | [object](#codedeploy_lifecycle_hooks) | Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null | null
 | codedeploy_test_listener_port | number | The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null | null
-| vpc_id | string | VPC ID to deploy ECS fargate service. |
+| vpc_id | string | VPC ID to deploy ALB and Lambda (If specified). |
 | public_subnet_ids | list(string) | List of subnet IDs for the ALB. |
-| private_subnet_ids | list(string) | List of subnet IDs for the Lambda service. |
 | tags | map(string) | A map of AWS Tags to attach to each resource created | {}
 | role_permissions_boundary_arn | string | IAM Role Permissions Boundary ARN |
 | log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7
 | lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []
-| security_groups | list(string) | List of extra security group IDs to attach to the lambda. | []
 | use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
+
+#### lambda_vpc_config
+
+This variable is used when the lambda needs to be run from within a VPC. 
+
+* **`subnet_ids`** - List of subnet IDs for the Lambda service. 
+* **`security_group_ids`** - List of extra security group IDs to attach to the lambda.
 
 #### codedeploy_lifecycle_hooks
 
