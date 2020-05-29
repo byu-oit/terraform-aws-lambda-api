@@ -94,7 +94,7 @@ module "lambda_api" {
 | tags | map(string) | A map of AWS Tags to attach to each resource created | {}
 | role_permissions_boundary_arn | string | IAM Role Permissions Boundary ARN |
 | log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7
-| lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []
+| lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []'
 | use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
 
 #### lambda_vpc_config
