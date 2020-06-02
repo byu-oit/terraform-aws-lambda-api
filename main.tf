@@ -259,8 +259,8 @@ resource "aws_lambda_function" "api_lambda" {
   dynamic "vpc_config" {
     for_each = var.lambda_vpc_config == null ? [] : [var.lambda_vpc_config]
     content {
-      subnet_ids         = lambda_vpc_config.value.subnet_ids
-      security_group_ids = concat([aws_security_group.lambda_sg.id], lambda_vpc_config.value.security_group_ids)
+      subnet_ids         = var.lambda_vpc_config.subnet_ids
+      security_group_ids = concat([aws_security_group.lambda_sg[0].id], var.lambda_vpc_config.security_group_ids)
     }
   }
 }
