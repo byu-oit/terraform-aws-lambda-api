@@ -40,6 +40,8 @@ module "lambda_api" {
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
   codedeploy_test_listener_port = 4443
   use_codedeploy                = true
+  timeout                       = 3
+  memory_size                   = 128
 
   lambda_vpc_config = {
     subnet_ids         = module.acs.private_subnet_ids
@@ -96,6 +98,8 @@ module "lambda_api" {
 | log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7
 | lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []'
 | use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
+| timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default)
+| memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default)
 
 #### lambda_vpc_config
 
