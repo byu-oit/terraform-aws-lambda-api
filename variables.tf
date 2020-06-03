@@ -110,3 +110,9 @@ variable "use_codedeploy" {
   description = "If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that)."
   default     = false
 }
+
+variable "timeout" {
+  type        = number
+  description = "Timeout (in seconds) for lambda. Defaults to 3 (terraform default"
+  default     = 3
+}
