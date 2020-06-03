@@ -247,6 +247,8 @@ resource "aws_lambda_function" "api_lambda" {
   handler          = var.handler
   runtime          = var.runtime
   publish          = true
+  timeout          = var.timeout
+  memory_size      = var.memory_size
 
   dynamic "environment" {
     for_each = var.environment_variables != null ? [1] : []

@@ -26,7 +26,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 ## Usage
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.0.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.0.1"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
@@ -41,6 +41,8 @@ module "lambda_api" {
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
   codedeploy_test_listener_port = 4443
   use_codedeploy                = true
+  timeout                       = 3
+  memory_size                   = 128
 
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
@@ -93,6 +95,8 @@ module "lambda_api" {
 | lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []
 | security_groups | list(string) | List of extra security group IDs to attach to the lambda. | []
 | use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
+| timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default)
+| memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default)
 
 #### codedeploy_lifecycle_hooks
 
