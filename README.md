@@ -42,6 +42,7 @@ module "lambda_api" {
   codedeploy_test_listener_port = 4443
   use_codedeploy                = true
   timeout                       = 3
+  memory_size                   = 128
 
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
@@ -95,6 +96,7 @@ module "lambda_api" {
 | security_groups | list(string) | List of extra security group IDs to attach to the lambda. | []
 | use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
 | timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default)
+| memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default)
 
 #### codedeploy_lifecycle_hooks
 
