@@ -116,3 +116,9 @@ variable "timeout" {
   description = "Timeout (in seconds) for lambda. Defaults to 3 (terraform default"
   default     = 3
 }
+
+variable "memory_size" {
+  type        = number
+  description = "Memory Size of the lambda"
+  default     = 128
+}
