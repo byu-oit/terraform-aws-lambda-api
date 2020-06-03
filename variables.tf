@@ -35,6 +35,15 @@ variable "environment_variables" {
   default     = null
 }
 
+variable "lambda_vpc_config" {
+  default     = null
+  description = "Provide this to allow your function to access your VPC."
+  type = object({
+    security_group_ids = list(string)
+    subnet_ids         = list(string)
+  })
+}
+
 variable "hosted_zone" {
   type = object({
     name = string,
@@ -71,10 +80,6 @@ variable "public_subnet_ids" {
   type        = list(string)
   description = "List of subnet IDs for the ALB."
 }
-variable "private_subnet_ids" {
-  type        = list(string)
-  description = "List of subnet IDs for the Lambda service."
-}
 
 variable "tags" {
   type        = map(string)
@@ -96,12 +101,6 @@ variable "log_retention_in_days" {
 variable "lambda_policies" {
   type        = list(string)
   description = "List of IAM Policy ARNs to attach to the lambda role."
-  default     = []
-}
-
-variable "security_groups" {
-  type        = list(string)
-  description = "List of extra security group IDs to attach to the lambda."
   default     = []
 }
 
