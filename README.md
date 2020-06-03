@@ -26,7 +26,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 ## Usage
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.0.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.0.1"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
