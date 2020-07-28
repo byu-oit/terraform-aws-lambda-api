@@ -26,7 +26,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 ## Usage
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.1.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.2.0"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
@@ -217,3 +217,9 @@ If manual rollback is needed after the deployment has completed, that can be don
 If you require additional variables please create an [issue](https://github.com/byu-oit/terraform-aws-lambda-api/issues)
  and/or a [pull request](https://github.com/byu-oit/terraform-aws-lambda-api/pulls) to add the variable and reach 
  out to the Terraform Working Group on slack (`#terraform` channel).
+
+## Developing
+
+### Release new version
+
+To release a new version, update the examples in the `examples` folder, the example in this README, and the number in the version file. Pushing to `master` will automatically create a new release and tag in GitHub.

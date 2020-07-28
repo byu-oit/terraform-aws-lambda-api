@@ -4,12 +4,12 @@ provider "aws" {
 }
 
 module "acs" {
-  source = "github.com/byu-oit/terraform-aws-acs-info?ref=v2.1.0"
+  source = "github.com/byu-oit/terraform-aws-acs-info?ref=v2.2.0"
 }
 
 module "lambda_api" {
   # source                        = "../../"
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.1.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.2.0"
   app_name                      = "my-lambda"
   env                           = "dev"
   lambda_zip_file               = "./src/lambda.zip"
