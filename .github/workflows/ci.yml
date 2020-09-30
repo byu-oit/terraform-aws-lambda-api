@@ -4,8 +4,6 @@ on:
   pull_request:
     branches: [master]
     types: [opened, reopened, synchronize, edited]
-env:
-  tf_version: "0.12.26" # must match value in examples/ci/ci.tf
 
 jobs:
   env:
@@ -18,7 +16,14 @@ jobs:
           matrix='{
             "env":[
               {
-                "tf_working_dir":"./examples/ci",
+                "tf_version":"0.13.2",
+                "tf_working_dir":"./examples/ci-13",
+                "aws_key_name":"byu_oit_terraform_dev_key",
+                "aws_secret_name":"byu_oit_terraform_dev_secret"
+              },
+              {
+                "tf_version":"0.12.26",
+                "tf_working_dir":"./examples/ci-12",
                 "aws_key_name":"byu_oit_terraform_dev_key",
                 "aws_secret_name":"byu_oit_terraform_dev_secret"
               }
@@ -41,7 +46,7 @@ jobs:
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: ${{ env.tf_version }}
+          terraform_version: ${{ matrix.env.tf_version }}
 
       - name: Terraform Format
         working-directory: "./"
@@ -66,7 +71,7 @@ jobs:
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: ${{ env.tf_version }}
+          terraform_version: ${{ matrix.env.tf_version }}
 
       - name: Terraform Init
         working-directory: ${{ matrix.env.tf_working_dir }}
