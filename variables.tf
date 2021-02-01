@@ -66,6 +66,12 @@ variable "codedeploy_lifecycle_hooks" {
   default     = null
 }
 
+variable "appspec_filename" {
+  type        = string
+  description = "Filename (including path) to use when outputing appspec json."
+  default     = null
+}
+
 variable "codedeploy_test_listener_port" {
   type        = number
   description = "The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null"

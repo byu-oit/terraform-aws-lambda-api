@@ -332,7 +332,7 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 
 resource "local_file" "appspec_json" {
   count    = var.use_codedeploy ? 1 : 0
-  filename = "${path.cwd}/appspec.json"
+  filename = var.appspec_filename != null ? var.appspec_filename : "${path.cwd}/appspec.json"
   content = jsonencode({
     version = 1
     Resources = [{

@@ -26,7 +26,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 ## Usage
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.1.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.2.0"
   app_name                      = "my-lambda"
   env                           = "dev"
   codedeploy_service_role_arn   = module.acs.power_builder_role.arn
@@ -90,6 +90,7 @@ module "lambda_api" {
 | hosted_zone | [object](#hosted_zone) | Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone. |
 | https_certificate_arn | string | ARN of the HTTPS certificate of the hosted zone/domain. |
 | codedeploy_lifecycle_hooks | [object](#codedeploy_lifecycle_hooks) | Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null | null
+| appspec_filename | string | Filename (including path) to use when outputing appspec json. | `appspec.json` in the current working directory (i.e. where you ran `terraform apply`) |
 | codedeploy_test_listener_port | number | The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null | null
 | vpc_id | string | VPC ID to deploy ALB and Lambda (If specified). |
 | public_subnet_ids | list(string) | List of subnet IDs for the ALB. |
