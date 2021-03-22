@@ -68,7 +68,7 @@ variable "codedeploy_lifecycle_hooks" {
 
 variable "appspec_filename" {
   type        = string
-  description = "Filename (including path) to use when outputing appspec json."
+  description = "Filename (including path) to use when outputting appspec json."
   default     = null
 }
 
@@ -80,7 +80,7 @@ variable "codedeploy_test_listener_port" {
 
 variable "vpc_id" {
   type        = string
-  description = "VPC ID to deploy ECS fargate service."
+  description = "VPC ID to deploy Lambda API service."
 }
 variable "public_subnet_ids" {
   type        = list(string)
@@ -112,7 +112,7 @@ variable "lambda_policies" {
 
 variable "use_codedeploy" {
   type        = bool
-  description = "If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that)."
+  description = "If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (because CodeDeploy will do that)."
   default     = false
 }
 
