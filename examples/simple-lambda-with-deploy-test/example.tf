@@ -23,6 +23,7 @@ module "lambda_api" {
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
   codedeploy_test_listener_port = 4443
   use_codedeploy                = true
+  xray_enabled                  = true
 
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name

@@ -101,6 +101,7 @@ module "lambda_api" {
 | use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
 | timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default)
 | memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default)
+| xray_enabled | bool | Whether or not the X-Ray daemon should be created with the Lambda API. | false
 
 #### lambda_vpc_config
 

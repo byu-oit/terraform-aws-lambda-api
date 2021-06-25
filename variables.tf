@@ -127,3 +127,8 @@ variable "memory_size" {
   description = "Memory Size of the lambda"
   default     = 128
 }
+variable "xray_enabled" {
+  type        = bool
+  description = "Whether or not the X-Ray daemon should be created with the Lambda API."
+  default     = false
+}
