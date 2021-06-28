@@ -272,7 +272,7 @@ resource "aws_lambda_function" "api_lambda" {
 }
 
 resource "aws_lambda_alias" "live" {
-  count            = !var.use_codedeploy ? 1 : 0
+  count            = ! var.use_codedeploy ? 1 : 0
   name             = "live"
   description      = "ALB sends traffic to this version"
   function_name    = aws_lambda_function.api_lambda.arn
