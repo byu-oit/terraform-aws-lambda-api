@@ -251,6 +251,10 @@ resource "aws_lambda_function" "api_lambda" {
   timeout          = var.timeout
   memory_size      = var.memory_size
 
+  tracing_config {
+    mode = var.xray_enabled == true ? "Active" : "PassThrough"
+  }
+
   dynamic "environment" {
     for_each = var.environment_variables != null ? [1] : []
     content {
