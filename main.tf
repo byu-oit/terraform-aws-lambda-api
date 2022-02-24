@@ -306,7 +306,7 @@ resource "aws_lambda_function" "docker_api" {
 }
 
 resource "aws_lambda_alias" "live" {
-  count            = ! local.use_codedeploy ? 1 : 0
+  count            = !local.use_codedeploy ? 1 : 0
   name             = "live"
   description      = "ALB sends traffic to this version"
   function_name    = local.use_zip ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn
