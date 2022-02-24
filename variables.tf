@@ -1,6 +1,10 @@
 variable "app_name" {
   type        = string
-  description = "application name (include the env in the name)"
+  description = "Application name to name your Fargate API and other resources. Must be <= 24 characters."
+  validation {
+    condition     = length(var.app_name) <= 24
+    error_message = "Must be <= 24 characters."
+  }
 }
 
 variable "image_uri" {
@@ -60,12 +64,6 @@ variable "https_certificate_arn" {
   type        = string
   description = "ARN of the HTTPS certificate of the hosted zone/domain."
 }
-
-#variable "use_codedeploy" {
-#  type        = bool
-#  description = "If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (because CodeDeploy will do that)."
-#  default     = false
-#}
 
 variable "codedeploy_service_role_arn" {
   type        = string

@@ -92,7 +92,7 @@ module "lambda_api" {
 ## Inputs
 | Name | Type  | Description | Default |
 | --- | --- | --- | --- |
-| app_name | string | application name (include the env aka. 'my-api-dev') | |
+| app_name | string | Application name to name your Lambda API and other resources (Must be <= 24 alphanumeric characters) | |
 | image_uri | string | ECR Image URI containing the function's deployment package (conflicts with `zip_file`)| null |
 | zip_filename | string | File that contains your compiled or zipped source code. |
 | zip_handler | string | Lambda event handler |
