@@ -4,17 +4,18 @@ provider "aws" {
 }
 
 module "acs" {
-  source = "github.com/byu-oit/terraform-aws-acs-info?ref=v3.2.0"
+  source = "github.com/byu-oit/terraform-aws-acs-info?ref=v3.4.0"
 }
 
 module "lambda_api" {
-  // source                        = "../../"
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.3.0"
-  app_name                      = "my-lambda"
-  env                           = "dev"
-  lambda_zip_file               = "./src/lambda.zip"
-  handler                       = "index.handler"
-  runtime                       = "nodejs12.x"
+  source = "../../"
+  #  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.3.0"
+  app_name = "my-lambda-dev"
+  zip_file = {
+    filename = "./src/lambda.zip"
+    handler  = "index.handler"
+    runtime  = "nodejs12.x"
+  }
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id

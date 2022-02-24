@@ -3,31 +3,39 @@ variable "app_name" {
   description = "application name"
 }
 
-variable "env" {
-  type        = string
-  description = "application environment (e.g. dev, stg, prd)"
+#variable "env" {
+#  type        = string
+#  description = "application environment (e.g. dev, stg, prd)"
+#}
+
+variable "zip_file" {
+  type = object({
+    filename = string
+    handler  = string
+    runtime  = string
+  })
+  default = null
 }
 
-variable "codedeploy_service_role_arn" {
-  type        = string
-  description = "ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)"
-  default     = null
+variable "image_uri" {
+  type    = string
+  default = null
 }
 
-variable "lambda_zip_file" {
-  type        = string
-  description = "File that contains your compiled or zipped source code."
-}
-
-variable "handler" {
-  type        = string
-  description = "Lambda event handler"
-}
-
-variable "runtime" {
-  type        = string
-  description = "Lambda runtime"
-}
+#variable "lambda_zip_file" {
+#  type        = string
+#  description = "File that contains your compiled or zipped source code."
+#}
+#
+#variable "handler" {
+#  type        = string
+#  description = "Lambda event handler"
+#}
+#
+#variable "runtime" {
+#  type        = string
+#  description = "Lambda runtime"
+#}
 
 variable "environment_variables" {
   type        = map(string)
@@ -44,6 +52,12 @@ variable "lambda_vpc_config" {
   })
 }
 
+variable "domain_url" {
+  type        = string
+  description = "Custom domain URL for the API"
+  default     = null
+}
+
 variable "hosted_zone" {
   type = object({
     name = string,
@@ -57,26 +71,51 @@ variable "https_certificate_arn" {
   description = "ARN of the HTTPS certificate of the hosted zone/domain."
 }
 
-variable "codedeploy_lifecycle_hooks" {
+variable "codedeploy_config" {
   type = object({
-    BeforeAllowTraffic = string
-    AfterAllowTraffic  = string
+    service_role_arn   = string
+    test_listener_port = number
+    lifecycle_hooks = object({
+      BeforeAllowTraffic = string
+      AfterAllowTraffic  = string
+    })
+    appspec_filename = string
   })
-  description = "Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null"
-  default     = null
+  default = null
 }
 
-variable "appspec_filename" {
-  type        = string
-  description = "Filename (including path) to use when outputting appspec json."
-  default     = null
-}
-
-variable "codedeploy_test_listener_port" {
-  type        = number
-  description = "The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null"
-  default     = null
-}
+#variable "use_codedeploy" {
+#  type        = bool
+#  description = "If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (because CodeDeploy will do that)."
+#  default     = false
+#}
+#
+#variable "codedeploy_service_role_arn" {
+#  type        = string
+#  description = "ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)"
+#  default     = null
+#}
+#
+#variable "codedeploy_test_listener_port" {
+#  type        = number
+#  description = "The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null"
+#  default     = null
+#}
+#
+#variable "codedeploy_lifecycle_hooks" {
+#  type = object({
+#    BeforeAllowTraffic = string
+#    AfterAllowTraffic  = string
+#  })
+#  description = "Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null"
+#  default     = null
+#}
+#
+#variable "appspec_filename" {
+#  type        = string
+#  description = "Filename (including path) to use when outputting appspec json."
+#  default     = null
+#}
 
 variable "vpc_id" {
   type        = string
@@ -108,12 +147,6 @@ variable "lambda_policies" {
   type        = list(string)
   description = "List of IAM Policy ARNs to attach to the lambda role."
   default     = []
-}
-
-variable "use_codedeploy" {
-  type        = bool
-  description = "If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (because CodeDeploy will do that)."
-  default     = false
 }
 
 variable "timeout" {
