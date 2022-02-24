@@ -1,18 +1,19 @@
 terraform {
-  required_version = ">= 0.12.21"
+  required_version = ">= 0.13.2"
   required_providers {
-    aws = ">= 2.56"
+    aws = ">= 3.0"
   }
 }
 
 # ==================== Locals ====================
 
 locals {
-  long_name      = "${var.app_name}-${var.env}"
-  alb_name       = "${local.long_name}-alb"                     // ALB name has a restriction of 32 characters max
-  app_domain_url = "${local.long_name}.${var.hosted_zone.name}" // Route53 A record name
+  alb_name       = "${var.app_name}-alb"                                                               // ALB name has a restriction of 32 characters max
+  app_domain_url = var.domain_url != null ? var.domain_url : "${var.app_name}.${var.hosted_zone.name}" // Route53 A record name
 
-  hooks = var.codedeploy_lifecycle_hooks != null ? setsubtract([
+  use_zip        = var.zip_filename != null
+  use_codedeploy = var.codedeploy_service_role_arn != null
+  hooks = local.use_codedeploy ? setsubtract([
     for hook in keys(var.codedeploy_lifecycle_hooks) :
     zipmap([hook], [lookup(var.codedeploy_lifecycle_hooks, hook, null)])
     ], [
@@ -73,15 +74,15 @@ resource "aws_security_group" "alb-sg" {
 }
 
 resource "aws_alb_target_group" "tg" {
-  name        = "${local.long_name}-tg"
+  name        = "${var.app_name}-tg"
   target_type = "lambda"
   tags        = var.tags
   depends_on  = [aws_alb.alb]
 }
 
 resource "aws_alb_target_group" "tst_tg" {
-  count       = var.use_codedeploy ? 1 : 0
-  name        = "${local.long_name}-tst"
+  count       = local.use_codedeploy ? 1 : 0
+  name        = "${var.app_name}-tst"
   target_type = "lambda"
   tags        = var.tags
   depends_on  = [aws_alb.alb]
@@ -105,7 +106,7 @@ resource "aws_alb_listener" "https" {
 }
 
 resource "aws_alb_listener" "test_https" {
-  count             = var.use_codedeploy ? 1 : 0
+  count             = local.use_codedeploy ? 1 : 0
   load_balancer_arn = aws_alb.alb.arn
   port              = 4443
   protocol          = "HTTPS"
@@ -139,31 +140,31 @@ resource "aws_alb_listener" "http_to_https" {
 resource "aws_lambda_permission" "with_lb" {
   statement_id  = "AllowExecutionFromlb"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_lambda.arn
+  function_name = var.app_name
   principal     = "elasticloadbalancing.amazonaws.com"
   source_arn    = aws_alb_target_group.tg.arn
-  qualifier     = var.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].name : aws_lambda_alias.live[0].name
+  qualifier     = local.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].name : aws_lambda_alias.live[0].name
 }
 
 resource "aws_lambda_permission" "with_tst_lb" {
-  count         = var.use_codedeploy ? 1 : 0
+  count         = local.use_codedeploy ? 1 : 0
   statement_id  = "AllowExecutionFromlb"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.api_lambda.arn
+  function_name = var.app_name
   principal     = "elasticloadbalancing.amazonaws.com"
   source_arn    = aws_alb_target_group.tst_tg[0].arn
 }
 
 resource "aws_alb_target_group_attachment" "live_attachment" {
   target_group_arn = aws_alb_target_group.tg.arn
-  target_id        = var.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].arn : aws_lambda_alias.live[0].arn #Live
+  target_id        = local.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].arn : aws_lambda_alias.live[0].arn #Live
   depends_on       = [aws_lambda_permission.with_lb]
 }
 
 resource "aws_alb_target_group_attachment" "tst_attachment" {
-  count            = var.use_codedeploy ? 1 : 0
+  count            = local.use_codedeploy ? 1 : 0
   target_group_arn = aws_alb_target_group.tst_tg[0].arn
-  target_id        = aws_lambda_function.api_lambda.arn # Latest
+  target_id        = local.use_zip ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn # Latest
   depends_on       = [aws_lambda_permission.with_tst_lb]
 }
 
@@ -193,7 +194,7 @@ resource "aws_route53_record" "aaaa_record" {
 # ==================== Lambda ====================
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name                 = "${local.long_name}-role"
+  name                 = "${var.app_name}-role"
   permissions_boundary = var.role_permissions_boundary_arn
   assume_role_policy   = <<EOF
 {
@@ -225,7 +226,7 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
 
 resource "aws_security_group" "lambda_sg" {
   count       = var.lambda_vpc_config != null ? 1 : 0
-  name        = "${local.long_name}-lambda-sg"
+  name        = "${var.app_name}-lambda-sg"
   description = "Controls access to the Lambda"
   vpc_id      = var.vpc_id
 
@@ -240,13 +241,15 @@ resource "aws_security_group" "lambda_sg" {
   tags = var.tags
 }
 
-resource "aws_lambda_function" "api_lambda" {
-  filename         = var.lambda_zip_file
-  source_code_hash = filebase64sha256(var.lambda_zip_file)
-  function_name    = local.long_name
+resource "aws_lambda_function" "zip_api" {
+  count = local.use_zip ? 1 : 0
+
+  function_name    = var.app_name
   role             = aws_iam_role.iam_for_lambda.arn
-  handler          = var.handler
-  runtime          = var.runtime
+  filename         = var.zip_filename
+  source_code_hash = filebase64sha256(var.zip_filename)
+  handler          = var.zip_handler
+  runtime          = var.zip_runtime
   publish          = true
   timeout          = var.timeout
   memory_size      = var.memory_size
@@ -271,21 +274,52 @@ resource "aws_lambda_function" "api_lambda" {
   }
 }
 
+resource "aws_lambda_function" "docker_api" {
+  count = var.image_uri != null ? 1 : 0
+
+  function_name = var.app_name
+  role          = aws_iam_role.iam_for_lambda.arn
+  package_type  = "Image"
+  image_uri     = var.image_uri
+  publish       = true
+  timeout       = var.timeout
+  memory_size   = var.memory_size
+
+  tracing_config {
+    mode = var.xray_enabled == true ? "Active" : "PassThrough"
+  }
+
+  dynamic "environment" {
+    for_each = var.environment_variables != null ? [1] : []
+    content {
+      variables = var.environment_variables
+    }
+  }
+
+  dynamic "vpc_config" {
+    for_each = var.lambda_vpc_config == null ? [] : [var.lambda_vpc_config]
+    content {
+      subnet_ids         = var.lambda_vpc_config.subnet_ids
+      security_group_ids = concat([aws_security_group.lambda_sg[0].id], var.lambda_vpc_config.security_group_ids)
+    }
+  }
+}
+
 resource "aws_lambda_alias" "live" {
-  count            = ! var.use_codedeploy ? 1 : 0
+  count            = !local.use_codedeploy ? 1 : 0
   name             = "live"
   description      = "ALB sends traffic to this version"
-  function_name    = aws_lambda_function.api_lambda.arn
-  function_version = aws_lambda_function.api_lambda.version
+  function_name    = local.use_zip ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn
+  function_version = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
 }
 
 resource "aws_lambda_alias" "live_codedeploy" {
-  count         = var.use_codedeploy ? 1 : 0
+  count         = local.use_codedeploy ? 1 : 0
   name          = "live"
   description   = "ALB sends traffic to this version"
-  function_name = aws_lambda_function.api_lambda.arn
+  function_name = var.app_name
   # Get the version of the lambda when it is first created
-  function_version = aws_lambda_function.api_lambda.version
+  function_version = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
   # Let CodeDeploy handle changes to the function version that this alias refers to
   lifecycle {
     ignore_changes = [
@@ -297,15 +331,15 @@ resource "aws_lambda_alias" "live_codedeploy" {
 # ==================== CodeDeploy ====================
 
 resource "aws_codedeploy_app" "app" {
-  count            = var.use_codedeploy ? 1 : 0
+  count            = local.use_codedeploy ? 1 : 0
   compute_platform = "Lambda"
-  name             = "${local.long_name}-cd"
+  name             = "${var.app_name}-cd"
 }
 
 resource "aws_codedeploy_deployment_group" "deployment_group" {
-  count                  = var.use_codedeploy ? 1 : 0
+  count                  = local.use_codedeploy ? 1 : 0
   app_name               = aws_codedeploy_app.app[0].name
-  deployment_group_name  = "${local.long_name}-dg"
+  deployment_group_name  = "${var.app_name}-dg"
   service_role_arn       = var.codedeploy_service_role_arn
   deployment_config_name = "CodeDeployDefault.LambdaAllAtOnce"
   deployment_style {
@@ -322,7 +356,7 @@ resource "aws_codedeploy_deployment_group" "deployment_group" {
 # ==================== CloudWatch ====================
 
 resource "aws_cloudwatch_log_group" "log_group" {
-  name              = "/aws/lambda/${aws_lambda_function.api_lambda.function_name}"
+  name              = "/aws/lambda/${var.app_name}"
   retention_in_days = var.log_retention_in_days
   tags              = var.tags
 }
@@ -335,18 +369,18 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 # ==================== AppSpec file ====================
 
 resource "local_file" "appspec_json" {
-  count    = var.use_codedeploy ? 1 : 0
-  filename = var.appspec_filename != null ? var.appspec_filename : "${path.cwd}/appspec.json"
+  count    = local.use_codedeploy ? 1 : 0
+  filename = var.codedeploy_appspec_filename != null ? var.codedeploy_appspec_filename : "${path.cwd}/appspec.json"
   content = jsonencode({
     version = 1
     Resources = [{
       apiLambdaFunction = {
         Type = "AWS::Lambda::Function"
         Properties = {
-          Name           = aws_lambda_function.api_lambda.function_name
+          Name           = var.app_name
           Alias          = aws_lambda_alias.live_codedeploy[0].name
           CurrentVersion = aws_lambda_alias.live_codedeploy[0].function_version
-          TargetVersion  = aws_lambda_function.api_lambda.version
+          TargetVersion  = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
         }
       }
     }],

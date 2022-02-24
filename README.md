@@ -24,30 +24,43 @@ Note: If you do not specify `use_codedeploy = true`, the above process will not 
 Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambda. If you are using CodePipeline, you cannot specify `use_codedeploy = true`. CodeDeploy works fine with other pipelining tools (e.g. GitHub Actions).
 
 ## Usage
+For a Zip file lambda
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.3.0"
-  app_name                      = "my-lambda"
-  env                           = "dev"
-  codedeploy_service_role_arn   = module.acs.power_builder_role.arn
-  lambda_zip_file               = "./src/lambda.zip"
-  handler                       = "index.handler"
-  runtime                       = "nodejs12.x"
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  app_name     = "my-lambda-codedeploy-dev"
+  env          = "dev"
+  zip_filename = "./src/lambda.zip"
+  zip_handler  = "index.handler"
+  zip_runtime  = "nodejs12.x"
+
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id
   public_subnet_ids             = module.acs.public_subnet_ids
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
+  codedeploy_service_role_arn   = module.acs.power_builder_role.arn
   codedeploy_test_listener_port = 4443
-  use_codedeploy                = true
-  timeout                       = 3
-  memory_size                   = 128
-
-  lambda_vpc_config = {
-    subnet_ids         = module.acs.private_subnet_ids
-    security_group_ids = ["sg-3asdfadsfasdfas"]
+  codedeploy_lifecycle_hooks = {
+    BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
+    AfterAllowTraffic  = null
   }
+}
+```
 
+For a docker image lambda:
+```hcl
+module "lambda_api" {
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  app_name                      = "my-docker-lambda"
+  image_uri                     = "my-image-from-my-ecr:latest"
+  hosted_zone                   = module.acs.route53_zone
+  https_certificate_arn         = module.acs.certificate.arn
+  vpc_id                        = module.acs.vpc.id
+  public_subnet_ids             = module.acs.public_subnet_ids
+  role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
+  codedeploy_service_role_arn   = module.acs.power_builder_role.arn
+  codedeploy_test_listener_port = 4443
   codedeploy_lifecycle_hooks = {
     BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
     AfterAllowTraffic  = null
@@ -73,35 +86,35 @@ module "lambda_api" {
 * DNS A-Record
 
 ## Requirements
-* Terraform version 0.12.21 or greater
-* AWS provider version 2.56 or greater
+* Terraform version 0.13.2 or greater
+* AWS provider version 3.0 or greater
 
 ## Inputs
 | Name | Type  | Description | Default |
 | --- | --- | --- | --- |
-| app_name | string | application name |
-| env | string | application environment (e.g. dev, stg, prd) |
+| app_name | string | Application name to name your Lambda API and other resources (Must be <= 24 alphanumeric characters) | |
+| image_uri | string | ECR Image URI containing the function's deployment package (conflicts with `zip_file`)| null |
+| zip_filename | string | File that contains your compiled or zipped source code. |
+| zip_handler | string | Lambda event handler |
+| zip_runtime | string | Lambda runtime |
+| lambda_vpc_config | [object](#lambda_vpc_config) | Lambda VPC object. Used if lambda requires to run inside a VPC | null |
+| environment_variables | map(string) | A map that defines environment variables for the Lambda function. | |
+| domain_url | string | Custom domain URL for the API, defaults to <app_name>.<hosted_zone_domain> | null | |
+| hosted_zone | [object](#hosted_zone) | Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone. | |
+| https_certificate_arn | string | ARN of the HTTPS certificate of the hosted zone/domain. | |
 | codedeploy_service_role_arn | string | ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role) |
-| lambda_zip_file | string | File that contains your compiled or zipped source code. |
-| handler | string | Lambda event handler |
-| runtime | string | Lambda runtime |
-| lambda_vpc_config | [object](#lambda_vpc_config) | Lambda VPC object. Used if lambda requires to run inside a VPC | null
-| environment_variables | map(string) | A map that defines environment variables for the Lambda function. |
-| hosted_zone | [object](#hosted_zone) | Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone. |
-| https_certificate_arn | string | ARN of the HTTPS certificate of the hosted zone/domain. |
 | codedeploy_lifecycle_hooks | [object](#codedeploy_lifecycle_hooks) | Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null | null
-| appspec_filename | string | Filename (including path) to use when outputing appspec json. | `appspec.json` in the current working directory (i.e. where you ran `terraform apply`) |
+| codedeploy_appspec_filename | string | Filename (including path) to use when outputing appspec json. | `appspec.json` in the current working directory (i.e. where you ran `terraform apply`) |
 | codedeploy_test_listener_port | number | The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null | null
-| vpc_id | string | VPC ID to deploy ALB and Lambda (If specified). |
-| public_subnet_ids | list(string) | List of subnet IDs for the ALB. |
-| tags | map(string) | A map of AWS Tags to attach to each resource created | {}
-| role_permissions_boundary_arn | string | IAM Role Permissions Boundary ARN |
-| log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7
-| lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []'
-| use_codedeploy | bool | If true, CodeDeploy App and Deployment Group will be created and TF will not update alias to point to new versions of the Lambda (becuase CodeDeploy will do that). | false
-| timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default)
-| memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default)
-| xray_enabled | bool | Whether or not the X-Ray daemon should be created with the Lambda API. | false
+| vpc_id | string | VPC ID to deploy ALB and Lambda (If specified). | |
+| public_subnet_ids | list(string) | List of subnet IDs for the ALB. | |
+| tags | map(string) | A map of AWS Tags to attach to each resource created | {} |
+| role_permissions_boundary_arn | string | IAM Role Permissions Boundary ARN | |
+| log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7 |
+| lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []' |
+| timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default) |
+| memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default) |
+| xray_enabled | bool | Whether or not the X-Ray daemon should be created with the Lambda API. | false |
 
 #### lambda_vpc_config
 
@@ -128,7 +141,7 @@ You can pass in either the object from the AWS terraform provider for an AWS Hos
 
 #### CloudWatch logs
 
-This module will create a CloudWatch log group named `/aws/lambda/<app_name>-<env>`.
+This module will create a CloudWatch log group named `/aws/lambda/<app_name>`.
 
 For instance with the [above example](#usage) the logs could be found in the CloudWatch log group: `aws/lambda/my-lambda-dev`.
 

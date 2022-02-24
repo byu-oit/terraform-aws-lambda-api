@@ -8,18 +8,16 @@ module "acs" {
 }
 
 module "lambda_api" {
-  # source                        = "../../"
-  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
-  app_name     = "my-lambda-dev"
-  zip_filename = "./src/lambda.zip"
-  zip_handler  = "index.handler"
-  zip_runtime  = "nodejs12.x"
-
+  #  source                        = "../../"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  app_name                      = "my-docker-lambda"
+  image_uri                     = "my-image-from-my-ecr:latest"
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id
   public_subnet_ids             = module.acs.public_subnet_ids
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
+  xray_enabled                  = true
 
   lambda_vpc_config = {
     subnet_ids         = module.acs.private_subnet_ids
