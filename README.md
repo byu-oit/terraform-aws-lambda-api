@@ -24,28 +24,46 @@ Note: If you do not specify `use_codedeploy = true`, the above process will not 
 Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambda. If you are using CodePipeline, you cannot specify `use_codedeploy = true`. CodeDeploy works fine with other pipelining tools (e.g. GitHub Actions).
 
 ## Usage
+For a Zip file lambda
 ```hcl
 module "lambda_api" {
-  source   = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
-  app_name = "my-lambda-dev"
-  env      = "dev"
-  zip_file = {
-    filename = "./src/lambda.zip"
-    handler  = "index.handler"
-    runtime  = "nodejs12.x"
-  }
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  app_name     = "my-lambda-codedeploy-dev"
+  env          = "dev"
+  zip_filename = "./src/lambda.zip"
+  zip_handler  = "index.handler"
+  zip_runtime  = "nodejs12.x"
+
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id
   public_subnet_ids             = module.acs.public_subnet_ids
   role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
-  codedeploy_config = {
-    service_role_arn   = module.acs.power_builder_role.arn
-    test_listener_port = 4443
-    lifecycle_hooks = {
-      BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
-      AfterAllowTraffic  = null
-    }
+  codedeploy_service_role_arn   = module.acs.power_builder_role.arn
+  codedeploy_test_listener_port = 4443
+  codedeploy_lifecycle_hooks = {
+    BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
+    AfterAllowTraffic  = null
+  }
+}
+```
+
+For a docker image lambda:
+```hcl
+module "lambda_api" {
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  app_name                      = "my-docker-lambda"
+  image_uri                     = "my-image-from-my-ecr:latest"
+  hosted_zone                   = module.acs.route53_zone
+  https_certificate_arn         = module.acs.certificate.arn
+  vpc_id                        = module.acs.vpc.id
+  public_subnet_ids             = module.acs.public_subnet_ids
+  role_permissions_boundary_arn = module.acs.role_permissions_boundary.arn
+  codedeploy_service_role_arn   = module.acs.power_builder_role.arn
+  codedeploy_test_listener_port = 4443
+  codedeploy_lifecycle_hooks = {
+    BeforeAllowTraffic = aws_lambda_function.test_lambda.function_name
+    AfterAllowTraffic  = null
   }
 }
 ```
@@ -68,21 +86,26 @@ module "lambda_api" {
 * DNS A-Record
 
 ## Requirements
-* Terraform version 0.12.21 or greater
-* AWS provider version 2.56 or greater
+* Terraform version 0.13.2 or greater
+* AWS provider version 3.0 or greater
 
 ## Inputs
 | Name | Type  | Description | Default |
 | --- | --- | --- | --- |
 | app_name | string | application name (include the env aka. 'my-api-dev') | |
-| zip_file | [object](#zip_file_config) | configuration for a zip file lambda (conflicts with `image_uri`) | null |
 | image_uri | string | ECR Image URI containing the function's deployment package (conflicts with `zip_file`)| null |
+| zip_filename | string | File that contains your compiled or zipped source code. |
+| zip_handler | string | Lambda event handler |
+| zip_runtime | string | Lambda runtime |
 | lambda_vpc_config | [object](#lambda_vpc_config) | Lambda VPC object. Used if lambda requires to run inside a VPC | null |
 | environment_variables | map(string) | A map that defines environment variables for the Lambda function. | |
 | domain_url | string | Custom domain URL for the API, defaults to <app_name>.<hosted_zone_domain> | null | |
 | hosted_zone | [object](#hosted_zone) | Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone. | |
 | https_certificate_arn | string | ARN of the HTTPS certificate of the hosted zone/domain. | |
-| codedeploy_config | [object](#codedeploy_config) | Configuration for putting CodeDeploy on the lambda | null |
+| codedeploy_service_role_arn | string | ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role) |
+| codedeploy_lifecycle_hooks | [object](#codedeploy_lifecycle_hooks) | Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null | null
+| codedeploy_appspec_filename | string | Filename (including path) to use when outputing appspec json. | `appspec.json` in the current working directory (i.e. where you ran `terraform apply`) |
+| codedeploy_test_listener_port | number | The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null | null
 | vpc_id | string | VPC ID to deploy ALB and Lambda (If specified). | |
 | public_subnet_ids | list(string) | List of subnet IDs for the ALB. | |
 | tags | map(string) | A map of AWS Tags to attach to each resource created | {} |
@@ -93,25 +116,12 @@ module "lambda_api" {
 | memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default) |
 | xray_enabled | bool | Whether or not the X-Ray daemon should be created with the Lambda API. | false |
 
-#### zip_file_config
-This configuration is used for when you are including the zipped up code for the lambda instead of using the `image_uri`
-* `filename` - (string) File that contains your compiled or zipped source code
-* `handler` - (string) Lambda event handler
-* `runtime` - (string) Lambda runtime
-
 #### lambda_vpc_config
 
 This variable is used when the lambda needs to be run from within a VPC. 
 
 * **`subnet_ids`** - List of subnet IDs for the Lambda service. 
 * **`security_group_ids`** - List of extra security group IDs to attach to the lambda.
-
-#### codedeploy_config
-If this configuration is included then this module will add the CodeDeploy App and Group required to deploy new versions of the Lambda through CodeDeploy, also allowing for the use of the LifeCycle hooks. 
-* `service_role_arn` - (string) ARN of the IAM Role for the CodeDeploy to use to initiate new deployments (usually the PowerBuilder Role)
-* `lifecycle_hooks` - ([object](#codedeploy_lifecycle_hooks)) | Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked
-* `appspec_filename` - (string) Filename (including path) to use when outputing appspec json (defaults to `appspec.json` in the current working directory)
-* `test_listener_port` - (number) The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set
 
 #### codedeploy_lifecycle_hooks
 

@@ -8,14 +8,12 @@ module "acs" {
 }
 
 module "lambda_api" {
-  source = "../../"
-  #  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v1.3.0"
-  app_name = "my-lambda-dev"
-  zip_file = {
-    filename = "./src/lambda.zip"
-    handler  = "index.handler"
-    runtime  = "nodejs12.x"
-  }
+  #  source = "../../"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  app_name                      = "my-lambda-dev"
+  zip_filename                  = "./src/lambda.zip"
+  zip_handler                   = "index.handler"
+  zip_runtime                   = "nodejs12.x"
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id

@@ -1,24 +1,27 @@
 terraform {
-  required_version = "0.12.26"
+  required_version = "1.0.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.73.0"
+    }
+  }
 }
 
 provider "aws" {
-  version = "~> 2.56"
-  region  = "us-west-2"
+  region = "us-west-2"
 }
 
 module "acs" {
   source = "github.com/byu-oit/terraform-aws-acs-info?ref=v3.4.0"
 }
 
-module "lambda_zip_api" {
-  source   = "../../"
-  app_name = "my-lambda"
-  zip_file = {
-    filename = "./lambda.zip"
-    handler  = "index.handler"
-    runtime  = "nodejs12.x"
-  }
+module "lambda_api" {
+  source                        = "../../"
+  app_name                      = "my-lambda"
+  zip_filename                  = "./lambda.zip"
+  zip_handler                   = "index.handler"
+  zip_runtime                   = "nodejs12.x"
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id

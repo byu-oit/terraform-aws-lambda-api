@@ -1,7 +1,7 @@
 terraform {
-  required_version = ">= 0.12.21"
+  required_version = ">= 0.13.2"
   required_providers {
-    aws = ">= 2.56"
+    aws = ">= 3.0"
   }
 }
 
@@ -11,10 +11,11 @@ locals {
   alb_name       = "${var.app_name}-alb"                                                               // ALB name has a restriction of 32 characters max
   app_domain_url = var.domain_url != null ? var.domain_url : "${var.app_name}.${var.hosted_zone.name}" // Route53 A record name
 
-  use_codedeploy = var.codedeploy_config != null
+  use_zip        = var.zip_filename != null
+  use_codedeploy = var.codedeploy_service_role_arn != null
   hooks = local.use_codedeploy ? setsubtract([
-    for hook in keys(var.codedeploy_config.lifecycle_hooks) :
-    zipmap([hook], [lookup(var.codedeploy_config.lifecycle_hooks, hook, null)])
+    for hook in keys(var.codedeploy_lifecycle_hooks) :
+    zipmap([hook], [lookup(var.codedeploy_lifecycle_hooks, hook, null)])
     ], [
     {
       BeforeAllowTraffic = null
@@ -54,10 +55,10 @@ resource "aws_security_group" "alb-sg" {
   }
   // if test listner port is specified, allow traffic
   dynamic "ingress" {
-    for_each = var.codedeploy_config != null ? [1] : []
+    for_each = var.codedeploy_test_listener_port != null ? [1] : []
     content {
-      from_port   = var.codedeploy_config.test_listener_port
-      to_port     = var.codedeploy_config.test_listener_port
+      from_port   = var.codedeploy_test_listener_port
+      to_port     = var.codedeploy_test_listener_port
       protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
     }
@@ -163,7 +164,7 @@ resource "aws_alb_target_group_attachment" "live_attachment" {
 resource "aws_alb_target_group_attachment" "tst_attachment" {
   count            = local.use_codedeploy ? 1 : 0
   target_group_arn = aws_alb_target_group.tst_tg[0].arn
-  target_id        = var.zip_file != null ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn # Latest
+  target_id        = local.use_zip ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn # Latest
   depends_on       = [aws_lambda_permission.with_tst_lb]
 }
 
@@ -241,14 +242,14 @@ resource "aws_security_group" "lambda_sg" {
 }
 
 resource "aws_lambda_function" "zip_api" {
-  count = var.zip_file != null ? 1 : 0
+  count = local.use_zip ? 1 : 0
 
   function_name    = var.app_name
   role             = aws_iam_role.iam_for_lambda.arn
-  filename         = var.zip_file.filename
-  source_code_hash = filebase64sha256(var.zip_file.filename)
-  handler          = var.zip_file.handler
-  runtime          = var.zip_file.runtime
+  filename         = var.zip_filename
+  source_code_hash = filebase64sha256(var.zip_filename)
+  handler          = var.zip_handler
+  runtime          = var.zip_runtime
   publish          = true
   timeout          = var.timeout
   memory_size      = var.memory_size
@@ -308,8 +309,8 @@ resource "aws_lambda_alias" "live" {
   count            = ! local.use_codedeploy ? 1 : 0
   name             = "live"
   description      = "ALB sends traffic to this version"
-  function_name    = var.zip_file != null ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn
-  function_version = var.zip_file != null ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
+  function_name    = local.use_zip ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn
+  function_version = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
 }
 
 resource "aws_lambda_alias" "live_codedeploy" {
@@ -318,7 +319,7 @@ resource "aws_lambda_alias" "live_codedeploy" {
   description   = "ALB sends traffic to this version"
   function_name = var.app_name
   # Get the version of the lambda when it is first created
-  function_version = var.zip_file != null ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
+  function_version = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
   # Let CodeDeploy handle changes to the function version that this alias refers to
   lifecycle {
     ignore_changes = [
@@ -339,7 +340,7 @@ resource "aws_codedeploy_deployment_group" "deployment_group" {
   count                  = local.use_codedeploy ? 1 : 0
   app_name               = aws_codedeploy_app.app[0].name
   deployment_group_name  = "${var.app_name}-dg"
-  service_role_arn       = var.codedeploy_config.service_role_arn
+  service_role_arn       = var.codedeploy_service_role_arn
   deployment_config_name = "CodeDeployDefault.LambdaAllAtOnce"
   deployment_style {
     deployment_option = "WITH_TRAFFIC_CONTROL"
@@ -369,7 +370,7 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_attach" {
 
 resource "local_file" "appspec_json" {
   count    = local.use_codedeploy ? 1 : 0
-  filename = var.codedeploy_config.appspec_filename != null ? var.codedeploy_config.appspec_filename : "${path.cwd}/appspec.json"
+  filename = var.codedeploy_appspec_filename != null ? var.codedeploy_appspec_filename : "${path.cwd}/appspec.json"
   content = jsonencode({
     version = 1
     Resources = [{
@@ -379,7 +380,7 @@ resource "local_file" "appspec_json" {
           Name           = var.app_name
           Alias          = aws_lambda_alias.live_codedeploy[0].name
           CurrentVersion = aws_lambda_alias.live_codedeploy[0].function_version
-          TargetVersion  = var.zip_file != null ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
+          TargetVersion  = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
         }
       }
     }],

@@ -1,7 +1,3 @@
-terraform {
-  required_version = "0.13.4"
-}
-
 provider "aws" {
   version = "~> 3.0"
   region  = "us-west-2"
@@ -12,9 +8,10 @@ module "acs" {
 }
 
 module "lambda_api" {
-  source                        = "../../"
+  #  source                        = "../../"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
   app_name                      = "my-docker-lambda"
-  image                         = "my-image-from-my-ecr:latest"
+  image_uri                     = "my-image-from-my-ecr:latest"
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id
@@ -28,38 +25,6 @@ module "lambda_api" {
   }
 }
 
-output "lambda" {
-  value = module.lambda_api.lambda
-}
-
-output "lambda_security_group" {
-  value = module.lambda_api.lambda_security_group
-}
-
-output "lambda_live_alias" {
-  value = module.lambda_api.lambda_live_alias
-}
-
-output "codedeploy_deployment_group" {
-  value = module.lambda_api.codedeploy_deployment_group
-}
-
-output "codedeploy_appspec_json_file" {
-  value = module.lambda_api.codedeploy_appspec_json_file
-}
-
-output "alb" {
-  value = module.lambda_api.alb
-}
-
-output "alb_security_group" {
-  value = module.lambda_api.alb_security_group
-}
-
-output "dns_record" {
-  value = module.lambda_api.dns_record
-}
-
-output "cloudwatch_log_group" {
-  value = module.lambda_api.cloudwatch_log_group
+output "url" {
+  value = module.lambda_api.dns_record.fqdn
 }

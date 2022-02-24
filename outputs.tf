@@ -1,5 +1,5 @@
 output "lambda" {
-  value = var.zip_file != null ? aws_lambda_function.zip_api[0] : aws_lambda_function.docker_api[0]
+  value = local.use_zip ? aws_lambda_function.zip_api[0] : aws_lambda_function.docker_api[0]
 }
 
 output "lambda_security_group" {
