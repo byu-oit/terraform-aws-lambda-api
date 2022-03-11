@@ -27,7 +27,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 For a Zip file lambda
 ```hcl
 module "lambda_api" {
-  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.1"
   app_name     = "my-lambda-codedeploy-dev"
   env          = "dev"
   zip_filename = "./src/lambda.zip"
@@ -51,7 +51,7 @@ module "lambda_api" {
 For a docker image lambda:
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.1"
   app_name                      = "my-docker-lambda"
   image_uri                     = "my-image-from-my-ecr:latest"
   hosted_zone                   = module.acs.route53_zone
@@ -92,7 +92,7 @@ module "lambda_api" {
 ## Inputs
 | Name | Type  | Description | Default |
 | --- | --- | --- | --- |
-| app_name | string | Application name to name your Lambda API and other resources (Must be <= 24 alphanumeric characters) | |
+| app_name | string | Application name to name your Lambda API and other resources (Must be <= 28 alphanumeric characters) | |
 | image_uri | string | ECR Image URI containing the function's deployment package (conflicts with `zip_file`)| null |
 | zip_filename | string | File that contains your compiled or zipped source code. |
 | zip_handler | string | Lambda event handler |
@@ -231,4 +231,4 @@ If manual rollback is needed after the deployment has completed, that can be don
 
 If you require additional variables please create an [issue](https://github.com/byu-oit/terraform-aws-lambda-api/issues)
  and/or a [pull request](https://github.com/byu-oit/terraform-aws-lambda-api/pulls) to add the variable and reach 
- out to the Terraform Working Group on slack (`#terraform` channel).
+ out to the Application Engineering SpecOps Green team (`IT Collaboration` -> `OIT ENG AppEng - SpecOps Green` channel).

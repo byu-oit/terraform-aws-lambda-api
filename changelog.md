@@ -10,3 +10,7 @@
 - removed `use_codedeploy` variable - just include the codedeploy variables to enable codedeploy
 - removed `env` variable - just include the env inside the `app_name` variable 
 - added `domain_url` variable to enable a custom API URL
+
+## v2.0.1
+3/11/2022 - increased `app_name` variable length
+- increased `app_name` variable length from 24 to 28
