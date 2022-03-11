@@ -1,0 +1,14 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: '/' # Check files in .github/workflows
+    schedule:
+      interval: monthly
+    target-branch: main
+
+  - package-ecosystem: terraform
+    directory: '/'
+    schedule:
+      interval: monthly
+    target-branch: main

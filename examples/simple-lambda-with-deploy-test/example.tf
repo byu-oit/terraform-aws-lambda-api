@@ -9,7 +9,7 @@ module "acs" {
 
 module "lambda_api" {
   #  source = "../../"
-  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.0"
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.1"
   app_name     = "my-lambda-codedeploy-dev"
   env          = "dev"
   zip_filename = "./src/lambda.zip"

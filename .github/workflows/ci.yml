@@ -2,15 +2,15 @@ name: CI
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
   env:
     name: Set Env Vars
     runs-on: ubuntu-latest
     steps:
-      - name: Set up DEV Environment Variables
-        if: github.base_ref == 'master'
+      - name: Set up Environment Variables
+        if: github.base_ref == 'main'
         run: |
           matrix='{
             "env":[
@@ -62,7 +62,7 @@ jobs:
       matrix: ${{ fromJson(needs.env.outputs.matrix) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1

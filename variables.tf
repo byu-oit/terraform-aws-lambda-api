@@ -1,9 +1,9 @@
 variable "app_name" {
   type        = string
-  description = "Application name to name your Fargate API and other resources. Must be <= 24 characters."
+  description = "Application name to name your Fargate API and other resources. Must be <= 28 characters."
   validation {
-    condition     = length(var.app_name) <= 24
-    error_message = "Must be <= 24 characters."
+    condition     = length(var.app_name) <= 28
+    error_message = "Must be <= 28 characters."
   }
 }
 
