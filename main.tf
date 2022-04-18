@@ -251,6 +251,7 @@ resource "aws_lambda_function" "zip_api" {
   handler          = var.zip_handler
   runtime          = var.zip_runtime
   publish          = true
+  layers           = var.lambda_layers
   timeout          = var.timeout
   memory_size      = var.memory_size
 

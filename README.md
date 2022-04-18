@@ -29,7 +29,6 @@ For a Zip file lambda
 module "lambda_api" {
   source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.0.1"
   app_name     = "my-lambda-codedeploy-dev"
-  env          = "dev"
   zip_filename = "./src/lambda.zip"
   zip_handler  = "index.handler"
   zip_runtime  = "nodejs12.x"
@@ -111,7 +110,8 @@ module "lambda_api" {
 | tags | map(string) | A map of AWS Tags to attach to each resource created | {} |
 | role_permissions_boundary_arn | string | IAM Role Permissions Boundary ARN | |
 | log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7 |
-| lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | []' |
+| lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | [] |
+| lambda_layers | list(string) | List of Lambda Layer Version ARNs (maximum of 5) to attach to your function. | [] |
 | timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default) |
 | memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default) |
 | xray_enabled | bool | Whether or not the X-Ray daemon should be created with the Lambda API. | false |

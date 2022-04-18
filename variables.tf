@@ -124,6 +124,12 @@ variable "lambda_policies" {
   default     = []
 }
 
+variable "lambda_layers" {
+  type        = list(string)
+  description = "List of Lambda Layer Version ARNs (maximum of 5) to attach to your function."
+  default     = []
+}
+
 variable "timeout" {
   type        = number
   description = "Timeout (in seconds) for lambda. Defaults to 3 (terraform default"
