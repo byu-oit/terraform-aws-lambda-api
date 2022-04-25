@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.1.1
+4/25/2022 - fixed race condition when resources depend on the function existing before their creation
+- updated references to the lambda arn where it should be the function name
+
 ## v2.1.0
 4/22/2022 - `lambda_layers` variable added as pass-through to `layers` variable of `aws_lambda_function` resource
 
