@@ -27,7 +27,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 For a Zip file lambda
 ```hcl
 module "lambda_api" {
-  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.1.0"
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.1.1"
   app_name     = "my-lambda-codedeploy-dev"
   zip_filename = "./src/lambda.zip"
   zip_handler  = "index.handler"
@@ -50,7 +50,7 @@ module "lambda_api" {
 For a docker image lambda:
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.1.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.1.1"
   app_name                      = "my-docker-lambda"
   image_uri                     = "my-image-from-my-ecr:latest"
   hosted_zone                   = module.acs.route53_zone
