@@ -140,7 +140,7 @@ resource "aws_alb_listener" "http_to_https" {
 resource "aws_lambda_permission" "with_lb" {
   statement_id  = "AllowExecutionFromlb"
   action        = "lambda:InvokeFunction"
-  function_name = var.app_name
+  function_name = local.use_zip ? aws_lambda_function.zip_api[0].function_name : aws_lambda_function.docker_api[0].function_name
   principal     = "elasticloadbalancing.amazonaws.com"
   source_arn    = aws_alb_target_group.tg.arn
   qualifier     = local.use_codedeploy ? aws_lambda_alias.live_codedeploy[0].name : aws_lambda_alias.live[0].name
@@ -150,7 +150,7 @@ resource "aws_lambda_permission" "with_tst_lb" {
   count         = local.use_codedeploy ? 1 : 0
   statement_id  = "AllowExecutionFromlb"
   action        = "lambda:InvokeFunction"
-  function_name = var.app_name
+  function_name = local.use_zip ? aws_lambda_function.zip_api[0].function_name : aws_lambda_function.docker_api[0].function_name
   principal     = "elasticloadbalancing.amazonaws.com"
   source_arn    = aws_alb_target_group.tst_tg[0].arn
 }
@@ -310,7 +310,7 @@ resource "aws_lambda_alias" "live" {
   count            = !local.use_codedeploy ? 1 : 0
   name             = "live"
   description      = "ALB sends traffic to this version"
-  function_name    = local.use_zip ? aws_lambda_function.zip_api[0].arn : aws_lambda_function.docker_api[0].arn
+  function_name    = local.use_zip ? aws_lambda_function.zip_api[0].function_name : aws_lambda_function.docker_api[0].function_name
   function_version = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
 }
 
@@ -318,7 +318,7 @@ resource "aws_lambda_alias" "live_codedeploy" {
   count         = local.use_codedeploy ? 1 : 0
   name          = "live"
   description   = "ALB sends traffic to this version"
-  function_name = var.app_name
+  function_name = local.use_zip ? aws_lambda_function.zip_api[0].function_name : aws_lambda_function.docker_api[0].function_name
   # Get the version of the lambda when it is first created
   function_version = local.use_zip ? aws_lambda_function.zip_api[0].version : aws_lambda_function.docker_api[0].version
   # Let CodeDeploy handle changes to the function version that this alias refers to
