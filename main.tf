@@ -254,7 +254,7 @@ resource "aws_lambda_function" "zip_api" {
   layers           = var.lambda_layers
   timeout          = var.timeout
   memory_size      = var.memory_size
-  architectures    = var.architectures
+  architectures    = [var.architecture]
 
   tracing_config {
     mode = var.xray_enabled == true ? "Active" : "PassThrough"
@@ -286,7 +286,7 @@ resource "aws_lambda_function" "docker_api" {
   publish       = true
   timeout       = var.timeout
   memory_size   = var.memory_size
-  architectures = var.architectures
+  architectures = [var.architecture]
 
   tracing_config {
     mode = var.xray_enabled == true ? "Active" : "PassThrough"

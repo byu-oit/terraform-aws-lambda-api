@@ -147,8 +147,8 @@ variable "xray_enabled" {
   default     = false
 }
 
-variable "architectures" {
-  type        = list(string)
-  description = "(Optional) Instruction set architecture for your Lambda function. Valid values are [\"x86_64\"] and [\"arm64\"]. Default is [\"x86_64\"]. Removing this attribute, function's architecture stay the same."
-  default     = ["x86_64"]
+variable "architecture" {
+  type        = string
+  description = "Instruction set architecture for your Lambda function. Valid values are \"x86_64\" and \"arm64\". Default is \"x86_64\"."
+  default     = "x86_64"
 }
