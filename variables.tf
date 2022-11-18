@@ -146,3 +146,9 @@ variable "xray_enabled" {
   description = "Whether or not the X-Ray daemon should be created with the Lambda API."
   default     = false
 }
+
+variable "architectures" {
+  type        = list(string)
+  description = "(Optional) Instruction set architecture for your Lambda function. Valid values are [\"x86_64\"] and [\"arm64\"]. Default is [\"x86_64\"]. Removing this attribute, function's architecture stay the same."
+  default     = ["x86_64"]
+}

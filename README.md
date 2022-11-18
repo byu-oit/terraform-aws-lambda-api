@@ -115,6 +115,7 @@ module "lambda_api" {
 | timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default) |
 | memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default) |
 | xray_enabled | bool | Whether or not the X-Ray daemon should be created with the Lambda API. | false |
+| architectures | list(string) | (Optional) Instruction set architecture for your Lambda function. Valid values are [\"x86_64\"] and [\"arm64\"]. Default is [\"x86_64\"]. Removing this attribute, function's architecture stay the same. | ["x86_64"] |
 
 #### lambda_vpc_config
 
