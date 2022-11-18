@@ -3,6 +3,7 @@
 ## v2.2.0
 11/18/2022 - support ARM 64 architecture
 - allow pass through of architecture to support arm64. Default is x86_64.
+- update terraform setup action
 - update license
 
 ## v2.1.1
