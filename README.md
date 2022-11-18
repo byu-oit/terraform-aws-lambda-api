@@ -27,7 +27,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 For a Zip file lambda
 ```hcl
 module "lambda_api" {
-  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.1.1"
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.2.0"
   app_name     = "my-lambda-codedeploy-dev"
   zip_filename = "./src/lambda.zip"
   zip_handler  = "index.handler"
@@ -50,7 +50,7 @@ module "lambda_api" {
 For a docker image lambda:
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.1.1"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.2.0"
   app_name                      = "my-docker-lambda"
   image_uri                     = "my-image-from-my-ecr:latest"
   hosted_zone                   = module.acs.route53_zone
@@ -89,32 +89,33 @@ module "lambda_api" {
 * AWS provider version 3.0 or greater
 
 ## Inputs
-| Name | Type  | Description | Default |
-| --- | --- | --- | --- |
-| app_name | string | Application name to name your Lambda API and other resources (Must be <= 28 alphanumeric characters) | |
-| image_uri | string | ECR Image URI containing the function's deployment package (conflicts with `zip_file`)| null |
-| zip_filename | string | File that contains your compiled or zipped source code. |
-| zip_handler | string | Lambda event handler |
-| zip_runtime | string | Lambda runtime |
-| lambda_vpc_config | [object](#lambda_vpc_config) | Lambda VPC object. Used if lambda requires to run inside a VPC | null |
-| environment_variables | map(string) | A map that defines environment variables for the Lambda function. | |
-| domain_url | string | Custom domain URL for the API, defaults to <app_name>.<hosted_zone_domain> | null | |
-| hosted_zone | [object](#hosted_zone) | Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone. | |
-| https_certificate_arn | string | ARN of the HTTPS certificate of the hosted zone/domain. | |
-| codedeploy_service_role_arn | string | ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role) |
-| codedeploy_lifecycle_hooks | [object](#codedeploy_lifecycle_hooks) | Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null | null
-| codedeploy_appspec_filename | string | Filename (including path) to use when outputing appspec json. | `appspec.json` in the current working directory (i.e. where you ran `terraform apply`) |
-| codedeploy_test_listener_port | number | The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null | null
-| vpc_id | string | VPC ID to deploy ALB and Lambda (If specified). | |
-| public_subnet_ids | list(string) | List of subnet IDs for the ALB. | |
-| tags | map(string) | A map of AWS Tags to attach to each resource created | {} |
-| role_permissions_boundary_arn | string | IAM Role Permissions Boundary ARN | |
-| log_retention_in_days | number | CloudWatch log group retention in days. Defaults to 7. | 7 |
-| lambda_policies | list(string) | List of IAM Policy ARNs to attach to the lambda role. | [] |
-| lambda_layers | list(string) | List of Lambda Layer Version ARNs (maximum of 5) to attach to your function. | [] |
-| timeout | number | How long the lambda will run (in seconds) before timing out | 3 (same as terraform default) |
-| memory_size | number | Size of the memory of the lambda. CPU will scale along with it | 128 (same as terraform default) |
-| xray_enabled | bool | Whether or not the X-Ray daemon should be created with the Lambda API. | false |
+| Name                          | Type                                  | Description                                                                                                                                                                                                                                         | Default                                                                                |
+|-------------------------------|---------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| app_name                      | string                                | Application name to name your Lambda API and other resources (Must be <= 28 alphanumeric characters)                                                                                                                                                |                                                                                        |
+| image_uri                     | string                                | ECR Image URI containing the function's deployment package (conflicts with `zip_file`)                                                                                                                                                              | null                                                                                   |
+| zip_filename                  | string                                | File that contains your compiled or zipped source code.                                                                                                                                                                                             |                                                                                        |
+| zip_handler                   | string                                | Lambda event handler                                                                                                                                                                                                                                |                                                                                        |
+| zip_runtime                   | string                                | Lambda runtime                                                                                                                                                                                                                                      |                                                                                        |
+| lambda_vpc_config             | [object](#lambda_vpc_config)          | Lambda VPC object. Used if lambda requires to run inside a VPC                                                                                                                                                                                      | null                                                                                   |
+| environment_variables         | map(string)                           | A map that defines environment variables for the Lambda function.                                                                                                                                                                                   |                                                                                        |
+| domain_url                    | string                                | Custom domain URL for the API, defaults to <app_name>.<hosted_zone_domain>                                                                                                                                                                          | null                                                                                   |
+| hosted_zone                   | [object](#hosted_zone)                | Hosted Zone object to redirect to ALB. (Can pass in the aws_hosted_zone object). A and AAAA records created in this hosted zone.                                                                                                                    |                                                                                        |
+| https_certificate_arn         | string                                | ARN of the HTTPS certificate of the hosted zone/domain.                                                                                                                                                                                             |                                                                                        |
+| codedeploy_service_role_arn   | string                                | ARN of the IAM Role for the CodeDeploy to use to initiate new deployments. (usually the PowerBuilder Role)                                                                                                                                          |                                                                                        |
+| codedeploy_lifecycle_hooks    | [object](#codedeploy_lifecycle_hooks) | Define Lambda Functions for CodeDeploy lifecycle event hooks. Or set this variable to null to not have any lifecycle hooks invoked. Defaults to null                                                                                                | null                                                                                   |
+| codedeploy_appspec_filename   | string                                | Filename (including path) to use when outputing appspec json.                                                                                                                                                                                       | `appspec.json` in the current working directory (i.e. where you ran `terraform apply`) |
+| codedeploy_test_listener_port | number                                | The port for a codedeploy test listener. If provided CodeDeploy will use this port for test traffic on the new replacement set during the blue-green deployment process before shifting production traffic to the replacement set. Defaults to null | null                                                                                   |
+| vpc_id                        | string                                | VPC ID to deploy ALB and Lambda (If specified).                                                                                                                                                                                                     |                                                                                        |
+| public_subnet_ids             | list(string)                          | List of subnet IDs for the ALB.                                                                                                                                                                                                                     |                                                                                        |
+| tags                          | map(string)                           | A map of AWS Tags to attach to each resource created                                                                                                                                                                                                | {}                                                                                     |
+| role_permissions_boundary_arn | string                                | IAM Role Permissions Boundary ARN                                                                                                                                                                                                                   |                                                                                        |
+| log_retention_in_days         | number                                | CloudWatch log group retention in days. Defaults to 7.                                                                                                                                                                                              | 7                                                                                      |
+| lambda_policies               | list(string)                          | List of IAM Policy ARNs to attach to the lambda role.                                                                                                                                                                                               | []                                                                                     |
+| lambda_layers                 | list(string)                          | List of Lambda Layer Version ARNs (maximum of 5) to attach to your function.                                                                                                                                                                        | []                                                                                     |
+| timeout                       | number                                | How long the lambda will run (in seconds) before timing out                                                                                                                                                                                         | 3 (same as terraform default)                                                          |
+| memory_size                   | number                                | Size of the memory of the lambda. CPU will scale along with it                                                                                                                                                                                      | 128 (same as terraform default)                                                        |
+| xray_enabled                  | bool                                  | Whether or not the X-Ray daemon should be created with the Lambda API.                                                                                                                                                                              | false                                                                                  |
+| architectures                 | string                                | (Optional) Instruction set architecture for your Lambda function. Valid values are [\"x86_64\"] and [\"arm64\"]. Default is [\"x86_64\"]. Removing this attribute, function's architecture stay the same.                                           | "x86_64"                                                                               |
 
 #### lambda_vpc_config
 
@@ -147,17 +148,17 @@ For instance with the [above example](#usage) the logs could be found in the Clo
 
 ## Outputs
 
-| Name | Type | Description |
-| ---  | ---  | --- |
-| lambda | [object](https://www.terraform.io/docs/providers/aws/r/lambda_function.html#argument-reference) | The Lambda that handles API requests |
-| lambda_security_group | [object](https://www.terraform.io/docs/providers/aws/r/security_group.html#argument-reference) | Controls what the Lambda can access |
-| lambda_live_alias | [object](https://www.terraform.io/docs/providers/aws/r/lambda_alias.html#argument-reference) | Controls which version of the Lambda receives "live" traffic |
-| codedeploy_deployment_group | [object](https://www.terraform.io/docs/providers/aws/r/codedeploy_deployment_group.html#argument-reference) | The CodeDeploy deployment group object. |
-| codedeploy_appspec_json_file | string | Filename of the generated appspec.json file |
-| alb | [object](https://www.terraform.io/docs/providers/aws/r/lb.html#argument-reference) | The Application Load Balancer (ALB) object |
-| alb_security_group | [object](https://www.terraform.io/docs/providers/aws/r/security_group.html#argument-reference) | The ALB's security group object |
-| dns_record | [object](https://www.terraform.io/docs/providers/aws/r/route53_record.html#argument-reference) | The DNS A-record mapped to the ALB |
-| cloudwatch_log_group | [object](https://www.terraform.io/docs/providers/aws/r/cloudwatch_log_group.html#argument-reference) | The log group for the Lambda's logs |
+| Name                         | Type                                                                                                        | Description                                                  |
+|------------------------------|-------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| lambda                       | [object](https://www.terraform.io/docs/providers/aws/r/lambda_function.html#argument-reference)             | The Lambda that handles API requests                         |
+| lambda_security_group        | [object](https://www.terraform.io/docs/providers/aws/r/security_group.html#argument-reference)              | Controls what the Lambda can access                          |
+| lambda_live_alias            | [object](https://www.terraform.io/docs/providers/aws/r/lambda_alias.html#argument-reference)                | Controls which version of the Lambda receives "live" traffic |
+| codedeploy_deployment_group  | [object](https://www.terraform.io/docs/providers/aws/r/codedeploy_deployment_group.html#argument-reference) | The CodeDeploy deployment group object.                      |
+| codedeploy_appspec_json_file | string                                                                                                      | Filename of the generated appspec.json file                  |
+| alb                          | [object](https://www.terraform.io/docs/providers/aws/r/lb.html#argument-reference)                          | The Application Load Balancer (ALB) object                   |
+| alb_security_group           | [object](https://www.terraform.io/docs/providers/aws/r/security_group.html#argument-reference)              | The ALB's security group object                              |
+| dns_record                   | [object](https://www.terraform.io/docs/providers/aws/r/route53_record.html#argument-reference)              | The DNS A-record mapped to the ALB                           |
+| cloudwatch_log_group         | [object](https://www.terraform.io/docs/providers/aws/r/cloudwatch_log_group.html#argument-reference)        | The log group for the Lambda's logs                          |
 
 #### appspec
 
