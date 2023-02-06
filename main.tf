@@ -29,10 +29,11 @@ locals {
 # ==================== ALB ====================
 
 resource "aws_alb" "alb" {
-  name            = local.alb_name
-  subnets         = var.public_subnet_ids
-  security_groups = [aws_security_group.alb-sg.id]
-  tags            = var.tags
+  name                   = local.alb_name
+  desync_mitigation_mode = "strictest"
+  subnets                = var.public_subnet_ids
+  security_groups        = [aws_security_group.alb-sg.id]
+  tags                   = var.tags
 }
 
 resource "aws_security_group" "alb-sg" {
