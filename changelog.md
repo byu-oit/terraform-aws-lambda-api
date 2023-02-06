@@ -1,7 +1,8 @@
 # Changelog
 
-## v2.2.1
+## v3.0.0
 2/6/2023 - Set `desync_mitigation_mode` to `strictest` in ALB
+- Require AWS provider >=3.67 to support `desync_mitigation_mode`
 
 ## v2.2.0
 11/18/2022 - support ARM 64 architecture
