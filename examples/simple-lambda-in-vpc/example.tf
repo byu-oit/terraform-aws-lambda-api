@@ -1,5 +1,5 @@
 provider "aws" {
-  version = "~> 3.0"
+  version = "~> 3.67"
   region  = "us-west-2"
 }
 
@@ -9,7 +9,7 @@ module "acs" {
 
 module "lambda_api" {
   # source                        = "../../"
-  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v2.2.0"
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v3.0.0"
   app_name     = "my-lambda-dev"
   zip_filename = "./src/lambda.zip"
   zip_handler  = "index.handler"
