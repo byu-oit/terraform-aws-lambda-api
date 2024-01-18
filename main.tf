@@ -30,7 +30,7 @@ locals {
 
 resource "aws_alb" "alb" {
   name                   = local.alb_name
-  desync_mitigation_mode = "strictest"
+  desync_mitigation_mode = "defensive"
   subnets                = var.public_subnet_ids
   security_groups        = [aws_security_group.alb-sg.id]
   tags                   = var.tags
