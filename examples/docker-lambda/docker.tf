@@ -9,7 +9,7 @@ module "acs" {
 
 module "lambda_api" {
   #  source                        = "../../"
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v3.0.0"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v3.0.1"
   app_name                      = "my-docker-lambda"
   image_uri                     = "my-image-from-my-ecr:latest"
   hosted_zone                   = module.acs.route53_zone
