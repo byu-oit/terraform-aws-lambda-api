@@ -14,7 +14,7 @@ module "lambda_api" {
   env          = "dev"
   zip_filename = "./src/lambda.zip"
   zip_handler  = "index.handler"
-  zip_runtime  = "nodejs12.x"
+  zip_runtime  = "nodejs20.x"
 
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
@@ -61,7 +61,7 @@ resource "aws_lambda_function" "test_lambda" {
   function_name    = "my-lambda-deploy-test"
   role             = aws_iam_role.test_lambda.arn
   handler          = "index.handler"
-  runtime          = "nodejs12.x"
+  runtime          = "nodejs20.x"
   timeout          = 30
   source_code_hash = data.archive_file.cleanup_lambda_zip.output_base64sha256
 }
