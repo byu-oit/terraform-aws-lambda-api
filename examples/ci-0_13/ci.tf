@@ -3,7 +3,7 @@ terraform {
 }
 
 provider "aws" {
-  version = "~> 3.67"
+  version = "~> 5.33"
   region  = "us-west-2"
 }
 
@@ -16,7 +16,7 @@ module "lambda_api" {
   app_name                      = "my-lambda"
   zip_filename                  = "./lambda.zip"
   zip_handler                   = "index.handler"
-  zip_runtime                   = "nodejs12.x"
+  zip_runtime                   = "nodejs20.x"
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
   vpc_id                        = module.acs.vpc.id

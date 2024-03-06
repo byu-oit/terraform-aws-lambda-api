@@ -13,7 +13,7 @@ module "lambda_api" {
   app_name     = "my-lambda-dev"
   zip_filename = "./src/lambda.zip"
   zip_handler  = "index.handler"
-  zip_runtime  = "nodejs12.x"
+  zip_runtime  = "nodejs20.x"
 
   hosted_zone                   = module.acs.route53_zone
   https_certificate_arn         = module.acs.certificate.arn
