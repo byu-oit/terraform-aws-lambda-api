@@ -86,7 +86,7 @@ module "lambda_api" {
 
 ## Requirements
 * Terraform version 0.13.2 or greater
-* AWS provider version 3.67 or greater
+* AWS provider version 5.26 or greater
 
 ## Inputs
 | Name                          | Type                                  | Description                                                                                                                                                                                                                                         | Default                                                                                |

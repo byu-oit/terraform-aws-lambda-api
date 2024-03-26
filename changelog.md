@@ -1,5 +1,9 @@
 # Changelog
 
+## v4.0.0
+2/6/2023 - Enable support for nodejs20.x runtime
+- Require AWS provider >=5.26 to support nodejs20.x runtime
+
 ## v3.0.0
 2/6/2023 - Set `desync_mitigation_mode` to `strictest` in ALB
 - Require AWS provider >=3.67 to support `desync_mitigation_mode`
