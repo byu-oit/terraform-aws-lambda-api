@@ -27,7 +27,7 @@ Also Note: CodePipeline and CodeDeploy cannot be used together to deploy a Lambd
 For a Zip file lambda
 ```hcl
 module "lambda_api" {
-  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v3.0.1"
+  source       = "github.com/byu-oit/terraform-aws-lambda-api?ref=v4.1.0"
   app_name     = "my-lambda-codedeploy-dev"
   zip_filename = "./src/lambda.zip"
   zip_handler  = "index.handler"
@@ -50,7 +50,7 @@ module "lambda_api" {
 For a docker image lambda:
 ```hcl
 module "lambda_api" {
-  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v3.0.1"
+  source                        = "github.com/byu-oit/terraform-aws-lambda-api?ref=v4.1.0"
   app_name                      = "my-docker-lambda"
   image_uri                     = "my-image-from-my-ecr:latest"
   hosted_zone                   = module.acs.route53_zone
@@ -109,7 +109,7 @@ module "lambda_api" {
 | public_subnet_ids             | list(string)                          | List of subnet IDs for the ALB.                                                                                                                                                                                                                     |                                                                                        |
 | tags                          | map(string)                           | A map of AWS Tags to attach to each resource created                                                                                                                                                                                                | {}                                                                                     |
 | role_permissions_boundary_arn | string                                | IAM Role Permissions Boundary ARN                                                                                                                                                                                                                   |                                                                                        |
-| log_retention_in_days         | number                                | CloudWatch log group retention in days. Defaults to 7.                                                                                                                                                                                              | 7                                                                                      |
+| log_retention_in_days         | number                                | CloudWatch log group retention in days. Defaults to 120.                                                                                                                                                                                            | 120                                                                                    |
 | lambda_policies               | list(string)                          | List of IAM Policy ARNs to attach to the lambda role.                                                                                                                                                                                               | []                                                                                     |
 | lambda_layers                 | list(string)                          | List of Lambda Layer Version ARNs (maximum of 5) to attach to your function.                                                                                                                                                                        | []                                                                                     |
 | timeout                       | number                                | How long the lambda will run (in seconds) before timing out                                                                                                                                                                                         | 3 (same as terraform default)                                                          |
