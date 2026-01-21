@@ -149,7 +149,7 @@ resource "aws_lambda_permission" "with_lb" {
 
 resource "aws_lambda_permission" "with_tst_lb" {
   count         = local.use_codedeploy ? 1 : 0
-  statement_id  = "AllowExecutionFromlb"
+  statement_id  = "AllowExecutionFromTstlb"
   action        = "lambda:InvokeFunction"
   function_name = local.use_zip ? aws_lambda_function.zip_api[0].function_name : aws_lambda_function.docker_api[0].function_name
   principal     = "elasticloadbalancing.amazonaws.com"
