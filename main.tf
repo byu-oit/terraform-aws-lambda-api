@@ -43,12 +43,14 @@ resource "aws_security_group" "alb-sg" {
 
   // allow access to the ALB from anywhere for 80 and 443
   ingress {
+    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
+    description = "HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -64,14 +66,8 @@ resource "aws_security_group" "alb-sg" {
       cidr_blocks = ["0.0.0.0/0"]
     }
   }
-  // allow any outgoing traffic
-  egress {
-    protocol    = "-1"
-    from_port   = 0
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = var.tags
+  egress = []
+  tags   = var.tags
 }
 
 resource "aws_alb_target_group" "tg" {
@@ -225,6 +221,7 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
   role       = aws_iam_role.iam_for_lambda.name
 }
 
+# trivy:ignore:AWS-0104 because applications choose their outbound dependencies
 resource "aws_security_group" "lambda_sg" {
   count       = var.lambda_vpc_config != null ? 1 : 0
   name        = "${var.app_name}-lambda-sg"
@@ -234,6 +231,7 @@ resource "aws_security_group" "lambda_sg" {
   # ingress not needed as ALB invokes Lambda via AWS API, not direct network traffic
 
   egress {
+    description = "Lambda outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -359,6 +357,7 @@ resource "aws_codedeploy_deployment_group" "deployment_group" {
 
 # ==================== CloudWatch ====================
 
+# trivy:ignore:AWS-0017
 resource "aws_cloudwatch_log_group" "log_group" {
   name              = "/aws/lambda/${var.app_name}"
   retention_in_days = var.log_retention_in_days
